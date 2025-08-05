@@ -1,0 +1,38 @@
+[mqtt]
+mqtt_broker = "localhost"         # Change if using a remote MQTT broker
+mqtt_port = 1883                  # Change if using non-default port
+mqtt_topic_prefix = "victron_ble" # Topic root for published data
+
+[logging]
+log_level = "INFO"
+log_to_file = false
+
+[devices]
+
+  # Replace each "xx:xx:xx" with the actual MAC address of your Victron device
+  # Valid models: SmartShunt, MPPT, BMV, TemperatureSensor
+
+  [devices."dc:56:e0:xx:xx:xx"]
+  model = "SmartShunt"
+  name = "House Battery"
+  enable = true
+
+  [devices."f0:81:73:xx:xx:xx"]
+  model = "SmartShunt"
+  name = "Chassis Battery"
+  enable = true
+
+  [devices."a4:c1:38:xx:xx:xx"]
+  model = "MPPT"
+  name = "Panel 1"
+  enable = true
+
+  [devices."a4:c1:38:yy:yy:yy"]
+  model = "MPPT"
+  name = "Panel 2"
+  enable = true
+
+  [devices."a4:c1:38:zz:zz:zz"]
+  model = "MPPT"
+  name = "Panel 3"
+  enable = true
