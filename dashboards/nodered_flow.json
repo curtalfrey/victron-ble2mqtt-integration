@@ -1,0 +1,55 @@
+{
+  "id": "victron-ble2mqtt-nodered",
+  "label": "Victron BLE2MQTT Dashboard",
+  "nodes": [
+    {
+      "id": "mqtt-in-1",
+      "type": "mqtt in",
+      "z": "victron-ble2mqtt-nodered",
+      "name": "Victron MQTT",
+      "topic": "victron/#",
+      "qos": "2",
+      "datatype": "auto",
+      "broker": "mqtt-broker-config",
+      "x": 120,
+      "y": 100,
+      "wires": [["debug-1"]]
+    },
+    {
+      "id": "debug-1",
+      "type": "debug",
+      "z": "victron-ble2mqtt-nodered",
+      "name": "MQTT Output",
+      "active": true,
+      "tosidebar": true,
+      "console": false,
+      "tostatus": false,
+      "complete": "true",
+      "targetType": "full",
+      "x": 340,
+      "y": 100,
+      "wires": []
+    },
+    {
+      "id": "mqtt-broker-config",
+      "type": "mqtt-broker",
+      "name": "Local MQTT Broker",
+      "broker": "localhost",
+      "port": "1883",
+      "clientid": "",
+      "usetls": false,
+      "protocolVersion": "4",
+      "keepalive": "60",
+      "cleansession": true,
+      "birthTopic": "",
+      "birthQos": "0",
+      "birthPayload": "",
+      "closeTopic": "",
+      "closePayload": "",
+      "willTopic": "",
+      "willQos": "0",
+      "willPayload": ""
+    }
+  ],
+  "configs": []
+}
