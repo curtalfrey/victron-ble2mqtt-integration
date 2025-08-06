@@ -1,6 +1,23 @@
 # Victron BLE2MQTT Integration Toolkit
 
-This repository contains a complete guide and set of integration tools to:
+
+## ⚠️ Known Issues
+
+### ❗ user_settings.py and TOML Configuration Errors
+
+If you're encountering errors related to `user_settings.py` or the `TOML` configuration, you are not alone — this is a common problem.
+
+👉 See the [Fix Guide for user_settings.py & TOML Errors](docs/fix_user_settings_issue.md) for the solution and explanation.
+
+This guide covers:
+- Why this error happens
+- How to fix it permanently
+- What files to check or create
+
+
+
+
+This repository also contains a complete guide and set of integration tools to:
 - Run `victron-ble2mqtt` as a systemd service
 - Use MQTT data in dashboards (Grafana, Node-RED, or Home Assistant)
 - Provide example configs and flows for each target system
