@@ -1,36 +1,29 @@
 """
-user_settings.py
-Edit this file to define your Victron BLE devices.
+user_settings.example.py
+Edit this file and copy it to `victron_ble2mqtt/user_settings.py`
 """
 
 # Set your MQTT connection
 mqtt_host = "localhost"
 mqtt_port = 1883
-mqtt_username = "victron"
-mqtt_password = "abc123"   # <- Replace with real pw
+mqtt_username = "your-username"
+mqtt_password = "your-password"
 
 # List your Victron BLE devices here
 devices = [
     {
         # Victron SmartShunt
-        "mac": "abc123",  # <- Replace with real MAC
+        "mac": "XX:XX:XX:XX:XX:XX",  # <- Replace with real MAC
         "type": "SmartShunt",
-        "name": "abc123",
-        "advertisement_key": "abc123",   # <- Replace with real key
-    },
-    {
-        # Victron SmartShunt
-        "mac": "abc123",  # <- Replace with real MAC
-        "type": "SmartShunt",
-        "name": "abc123",
-        "advertisement_key": "abc123",   # <- Replace with real key
+        "name": "Battery 1",
+        "advertisement_key": "your_advertisement_key"
     },
     {
         # Victron MPPT
-        "mac": "abc123",  # <- Replace with real MAC
+        "mac": "YY:YY:YY:YY:YY:YY",
         "type": "BlueSolar",
-        "name": "abc123",
-        "advertisement_key": "abc123",   # <- Replace with real key
+        "name": "Solar 1",
+        "advertisement_key": "your_advertisement_key"
     }
 ]
 
