@@ -95,6 +95,18 @@ victron ble mqtt node-red
 victron mqtt home assistant
 refoss smart energy home assistant local
 refoss em06 mqtt integration
+victron ble2mqtt raspberry pi setup
+victron smartshunt mqtt example
+victron mppt mqtt dashboard
+victron mqtt integration node-red home assistant
+victron ble2mqtt user_settings.py example
+victron mqtt troubleshooting guide
+refoss em16 energy monitor local integration
+refoss home assistant no cloud
+victron refoss energy dashboard
+combine victron and refoss in home assistant
+victron ble2mqtt systemd config error
+victron ble2mqtt service not starting
 ```
 
 ## 🔐 Notes on Privacy
