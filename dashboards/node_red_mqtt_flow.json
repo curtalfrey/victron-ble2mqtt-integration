@@ -1,0 +1,53 @@
+[
+  {
+    "id": "mqtt_in_victron",
+    "type": "mqtt in",
+    "z": "flow1",
+    "name": "Victron MQTT In",
+    "topic": "N/XX:XX:XX:XX:XX:XX/system/0/Serial",
+    "qos": "0",
+    "datatype": "auto",
+    "broker": "mqtt_broker_config",
+    "x": 140,
+    "y": 100,
+    "wires": [
+      [
+        "debug_victron"
+      ]
+    ]
+  },
+  {
+    "id": "debug_victron",
+    "type": "debug",
+    "z": "flow1",
+    "name": "Debug Victron",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "x": 360,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "mqtt_broker_config",
+    "type": "mqtt-broker",
+    "name": "Local Mosquitto Broker",
+    "broker": "localhost",
+    "port": "1883",
+    "clientid": "victron-nodered",
+    "usetls": false,
+    "compatmode": false,
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "closeTopic": "",
+    "closePayload": "",
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": ""
+  }
+]
