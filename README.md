@@ -53,7 +53,8 @@ cp setup/user_settings.example.py victron_ble2mqtt/user_settings.py
 
 
 ```bash
-nano setup/user_settings.py
+change the name to below and 
+nano user_settings.py
 ```
 
 Make sure to:
