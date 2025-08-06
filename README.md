@@ -42,6 +42,16 @@ cd victron-ble2mqtt-integration
 
 ### Step 2: Edit `user_settings.py`
 
+
+## Configuration
+
+To get started, copy the example user settings file and customize it for your setup:
+
+```bash
+cp setup/user_settings.example.py victron_ble2mqtt/user_settings.py
+```
+
+
 ```bash
 nano setup/user_settings.py
 ```
@@ -84,6 +94,8 @@ If `user_settings.toml` is not being loaded or is causing errors, skip it comple
 4. These entities can be used in dashboards and automations, combined with Victron data.
 
 > 📝 Refoss integration is entirely local and does not rely on cloud services.
+
+
 
 ## 📌 Keywords for Searchability
 
