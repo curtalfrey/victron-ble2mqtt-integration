@@ -1,0 +1,50 @@
+{
+  // This file provides MQTT Discovery configuration for Home Assistant.
+  // Replace all MAC addresses, topics, and device names with your own.
+  // You can delete these comments before use.
+
+  "sensor": [
+    {
+      "name": "Victron Battery Voltage",
+      "state_topic": "victron/XX:XX:XX:XX:XX:XX/voltage",
+      "unit_of_measurement": "V",
+      "device_class": "voltage",
+      "unique_id": "victron_batt_voltage",
+      "state_class": "measurement",
+      "device": {
+        "identifiers": ["victron_ble_XX:XX:XX:XX:XX:XX"],
+        "name": "Victron MPPT",
+        "manufacturer": "Victron",
+        "model": "SmartSolar 75/15"
+      }
+    },
+    {
+      "name": "Victron Battery Current",
+      "state_topic": "victron/XX:XX:XX:XX:XX:XX/current",
+      "unit_of_measurement": "A",
+      "device_class": "current",
+      "unique_id": "victron_batt_current",
+      "state_class": "measurement",
+      "device": {
+        "identifiers": ["victron_ble_XX:XX:XX:XX:XX:XX"],
+        "name": "Victron MPPT",
+        "manufacturer": "Victron",
+        "model": "SmartSolar 75/15"
+      }
+    },
+    {
+      "name": "Victron Battery Power",
+      "state_topic": "victron/XX:XX:XX:XX:XX:XX/power",
+      "unit_of_measurement": "W",
+      "device_class": "power",
+      "unique_id": "victron_batt_power",
+      "state_class": "measurement",
+      "device": {
+        "identifiers": ["victron_ble_XX:XX:XX:XX:XX:XX"],
+        "name": "Victron MPPT",
+        "manufacturer": "Victron",
+        "model": "SmartSolar 75/15"
+      }
+    }
+  ]
+}

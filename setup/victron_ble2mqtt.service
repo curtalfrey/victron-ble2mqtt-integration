@@ -1,0 +1,20 @@
+# victron_ble2mqtt.service
+# This unit file starts victron_ble2mqtt as a systemd service.
+# Replace YOUR_USERNAME with your actual Raspberry Pi username
+# Adjust paths if your setup is in a different directory.
+
+[Unit]
+Description=victron_ble2mqtt service
+After=network-online.target
+
+[Service]
+User=YOUR_USERNAME       # ← Change this
+Group=YOUR_USERNAME      # ← Change this
+WorkingDirectory=/home/YOUR_USERNAME/victron-ble2mqtt       # ← Change this
+ExecStart=/home/YOUR_USERNAME/victron-venv/bin/python3 -m victron_ble2mqtt publish-loop  # ← Change this
+Restart=always
+SyslogIdentifier=victron_ble2mqtt
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
