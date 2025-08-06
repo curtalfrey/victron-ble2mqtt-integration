@@ -1,152 +1,94 @@
-# Victron BLE2MQTT Integration Toolkit
+# Victron BLE to MQTT Integration
 
+This repository provides working examples and templates for integrating Victron Smart devices (e.g., MPPTs, SmartShunts) using [victron-ble2mqtt](https://github.com/Louisvdw/victron-ble2mqtt). These examples allow for forwarding Victron data to your platform of choice such as Home Assistant, Node-RED, or others.
 
-## ⚠️ Known Issues
+## ⚠️ Compatibility and Scope
 
-### ❗ user_settings.py and TOML Configuration Errors
+* Confirmed working with Victron 75/15 MPPTs, Victron SmartShunt, and Venus OS running on Raspberry Pi.
+* Current integrations include:
 
-If you're encountering errors related to `user_settings.py` or the `TOML` configuration, you are not alone — this is a common problem.
+  * Home Assistant (via MQTT dashboard)
+  * Node-RED (via MQTT flow)
 
-👉 See the [Fix Guide for user_settings.py & TOML Errors](docs/fix_user_settings_issue.md) for the solution and explanation.
+## 📁 Dashboard Directory
 
-This guide covers:
-- Why this error happens
-- How to fix it permanently
-- What files to check or create
+All dashboard files are located under the `dashboards/` folder.
 
+## 🧩 Dashboard JSON Files
 
+### Home Assistant
 
+* **Path:** `dashboards/home_assistant_mqtt.json`
+* **Description:** Imports into Home Assistant's MQTT dashboard to visualize Victron Smart device data.
+* 📝 *Comment inside JSON marks where to replace MAC address.*
 
-This repository also contains a complete guide and set of integration tools to:
-- Run `victron-ble2mqtt` as a systemd service
-- Use MQTT data in dashboards (Grafana, Node-RED, or Home Assistant)
-- Provide example configs and flows for each target system
+### Node-RED
 
----
+* **Path:** `dashboards/nodered_victron_flow.json`
+* **Description:** Full Node-RED flow to subscribe to Victron MQTT topics and build your own dashboard or automations.
 
-## 📦 Project Structure
+> Replace MAC addresses or topic filters as needed inside these files. Look for comment markers `# REPLACE_ME`.
 
-```
-victron-ble2mqtt-integration/
-├── README.md
-├── setup/
-│   ├── user_settings.py             # Example BLE device config
-│   ├── victron_ble2mqtt.service    # Custom systemd unit file (edit username/paths)
-│   └── victron_ble2mqtt.toml       # Optional TOML-style config
-├── dashboards/
-│   ├── grafana_example.json        # Grafana dashboard export
-│   ├── nodered_flow.json           # Node-RED flow (MQTT->Dashboard)
-│   └── home_assistant.yaml         # HA discovery YAML
-```
+## 🔧 Setup
 
----
+### Step 1: Clone This Repo
 
-## 🧠 What Is This?
-This repo documents how to:
-- Set up `victron-ble2mqtt` on a Raspberry Pi running [Venus OS](https://github.com/victronenergy/venus/wiki)
-- Run it persistently with `systemd`
-- Send live BLE data to any MQTT-compatible dashboard
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone this repo
 ```bash
+cd ~
 git clone https://github.com/curtalfrey/victron-ble2mqtt-integration.git
 cd victron-ble2mqtt-integration
 ```
 
-### 2. Customize your settings
-Edit `setup/user_settings.py` to match your BLE MAC addresses and sensor types.
+### Step 2: Edit `user_settings.py`
 
-### 3. Customize and install the systemd unit file
-Edit the file to match your Raspberry Pi username and paths:
-```ini
-# setup/victron_ble2mqtt.service
-# Replace YOUR_USERNAME with your Pi's username
-# Replace paths if your virtualenv or clone directory is elsewhere
-User=YOUR_USERNAME
-Group=YOUR_USERNAME
-WorkingDirectory=/home/YOUR_USERNAME/victron-ble2mqtt
-ExecStart=/home/YOUR_USERNAME/victron-venv/bin/python3 -m victron_ble2mqtt publish-loop
+```bash
+nano setup/user_settings.py
 ```
-Then copy it into systemd and enable the service:
+
+Make sure to:
+
+* Replace MAC addresses with your actual Victron device MACs
+* Modify MQTT settings if needed
+
+### Step 3: Configure `victron_ble2mqtt.service`
+
 ```bash
 sudo cp setup/victron_ble2mqtt.service /etc/systemd/system/victron_ble2mqtt.service
 sudo systemctl daemon-reload
-sudo systemctl enable victron_ble2mqtt
-sudo systemctl start victron_ble2mqtt
+sudo systemctl enable victron_ble2mqtt.service
+sudo systemctl start victron_ble2mqtt.service
 ```
 
----
+### Step 4: Import Dashboards
 
-## 📊 Dashboard Options
+* For Home Assistant, use the GUI to import `home_assistant_mqtt.json`
+* For Node-RED, open the Node-RED UI and import `nodered_victron_flow.json` via the editor
 
-### 🟢 Node-RED
-- Drag & drop `dashboards/nodered_flow.json` into your Node-RED editor
-- Configure MQTT broker to match your local broker
+## ✅ Fix for Common `user_settings.toml` Error
 
-### 🕣 Grafana
-- Import `dashboards/grafana_example.json`
-- Requires: InfluxDB or similar MQTT→DB bridge
+If `user_settings.toml` is not being loaded or is causing errors, skip it completely and use `user_settings.py`. This repo provides a verified working `user_settings.py` that eliminates TOML-related issues.
 
-### 🔵 Home Assistant
-- Add `dashboards/home_assistant.yaml` to your MQTT discovery directory
-- Or use `mqtt:` auto-discovery with matching topics
+## 📌 Keywords for Searchability
 
+```
+victron-ble2mqtt not working
+victron user_settings.toml error
+victron_ble2mqtt.service fix
+victron ble mqtt node-red
+victron mqtt home assistant
+```
 
-## Dashboards and Integrations
+## 🔐 Notes on Privacy
 
-### Node-RED
-- `dashboards/node_red_mqtt_flow.json`  
-  Node-RED flow for subscribing to Victron MQTT data.  
-  🛠️ Import into Node-RED using the Import function under the main menu.
-
-### Home Assistant
-- `dashboards/home_assistant_mqtt.json`  
-  Home Assistant MQTT device configuration for Victron SmartShunt or MPPT.  
-  🛠️ Use this to create MQTT devices in `configuration.yaml`.
-
-
+* All user-specific info like usernames have been scrubbed.
+* Replace any placeholders with your actual values before deploying.
 
 ---
 
-## 🛠️ Dependencies
-- `victron-ble2mqtt` Python app: [https://github.com/kwindrem/victron-ble2mqtt](https://github.com/kwindrem/victron-ble2mqtt)
-- Python 3.11+
-- MQTT broker (Mosquitto recommended)
-- Optional: Node-RED, Grafana, Home Assistant
+### Contributions Welcome
+
+Submit a PR if you'd like to share other dashboards (e.g., for Grafana, InfluxDB, etc.)
 
 ---
 
-## 📮 Contributing
-Pull requests welcome for:
-- Other dashboard integrations
-- Improved systemd handling
-- MQTT topic mapping tips
-
----
-
-## 🧑‍👷 Maintainer
-**Curt Alfrey**  
-ALFa Quantum Dynamics LLC  
-https://alfaqd.com
-GitHub: [@curtalfrey](https://github.com/curtalfrey)
-
----
-
-## 📘 License
-MIT License — free to use, modify, and share.
-
----
-
-## ✅ Coming Soon
-- Dockerized version
-- Live demo
-- Battery SoC/Temp warnings
-- SMS/Email alerting hooks
-
----
-
-Want to share your version? Open an issue or PR!
+© 2025 Curt Alfrey | [alfaqd.com](https://alfaqd.com)
