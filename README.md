@@ -9,6 +9,7 @@ This repository provides working examples and templates for integrating Victron 
 
   * Home Assistant (via MQTT dashboard)
   * Node-RED (via MQTT flow)
+  * Refoss Smart Energy Monitor (via native Home Assistant integration)
 
 ## 📁 Dashboard Directory
 
@@ -68,6 +69,22 @@ sudo systemctl start victron_ble2mqtt.service
 
 If `user_settings.toml` is not being loaded or is causing errors, skip it completely and use `user_settings.py`. This repo provides a verified working `user_settings.py` that eliminates TOML-related issues.
 
+## 🔌 Refoss Smart Energy Monitor Integration
+
+**Supported models:**
+
+* Refoss Smart Energy Monitor EM06 (firmware v2.3.8+)
+* Refoss Smart Energy Monitor EM16 (firmware v3.1.7+)
+
+**Integration steps:**
+
+1. Ensure the Refoss device is on the same LAN as your Home Assistant instance.
+2. In Home Assistant, go to **Settings → Devices & Services → Add Integration → Refoss**.
+3. Home Assistant will auto-discover the device and create energy monitoring entities (e.g., current, voltage, power per channel).
+4. These entities can be used in dashboards and automations, combined with Victron data.
+
+> 📝 Refoss integration is entirely local and does not rely on cloud services.
+
 ## 📌 Keywords for Searchability
 
 ```
@@ -76,6 +93,8 @@ victron user_settings.toml error
 victron_ble2mqtt.service fix
 victron ble mqtt node-red
 victron mqtt home assistant
+refoss smart energy home assistant local
+refoss em06 mqtt integration
 ```
 
 ## 🔐 Notes on Privacy
