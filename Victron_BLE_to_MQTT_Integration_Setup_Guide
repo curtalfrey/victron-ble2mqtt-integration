@@ -100,9 +100,9 @@ custom/custom_victron_ble_utils.py
 patches/ha_services/sensor.py
 dashboards/home_assistant_victron.json
 dashboards/node_red_mqtt_flow.json
-setup/user_settings.example.py → rename to user_settings.py
-setup/victron_ble2mqtt.toml
-setup/victron_ble2mqtt.service
+config/user_settings.example.py → rename to user_settings.py
+config/victron_ble2mqtt.toml
+config/victron_ble2mqtt.service
 ```
 
 Edit `user_settings.py` and `victron_ble2mqtt.toml` to match your BLE MACs and desired MQTT topics.
@@ -112,7 +112,7 @@ Edit `user_settings.py` and `victron_ble2mqtt.toml` to match your BLE MACs and d
 Copy the service file:
 
 ```bash
-sudo cp ~/victron-ble2mqtt-integration/setup/victron_ble2mqtt.service /etc/systemd/system/
+sudo cp ~/victron-ble2mqtt-integration/config/victron_ble2mqtt.service /etc/systemd/system/
 ```
 
 Edit it to reflect your user and path:
