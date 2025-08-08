@@ -1,6 +1,6 @@
 # Victron BLE to MQTT Integration Setup Guide
 
-This guide walks through the complete setup of a Raspberry Pi 4 running Raspberry Pi OS Lite to scan Victron BLE devices (e.g., SmartShunts, MPPTs), publish the data to MQTT, and integrate with Home Assistant. No GUI required. Copy-paste friendly.
+This guide walks through the complete setup of a Raspberry Pi 4 running Raspberry Pi OS Lite to scan Victron BLE devices (e.g., SmartShunts, MPPTs), publish the data to MQTT, and integrate with Home Assistant and Node-RED. No GUI required. Copy-paste friendly.
 
 ---
 
@@ -14,8 +14,9 @@ This guide walks through the complete setup of a Raspberry Pi 4 running Raspberr
 6. [Systemd Service Configuration](#6-systemd-service-configuration)
 7. [Mosquitto MQTT Broker Setup](#7-mosquitto-mqtt-broker-setup)
 8. [Home Assistant Integration](#8-home-assistant-integration)
-9. [Auto-Start on Boot](#9-auto-start-on-boot)
-10. [Reboot Test](#10-reboot-test)
+9. [Node-RED Integration Options](#9-node-red-integration-options)
+10. [Auto-Start on Boot](#10-auto-start-on-boot)
+11. [Reboot Test](#11-reboot-test)
 
 ---
 
@@ -99,7 +100,7 @@ Manually copy these files into your integration repo:
 custom/custom_victron_ble_utils.py
 patches/ha_services/sensor.py
 dashboards/home_assistant_victron.json
-dashboards/node_red_mqtt_flow.json
+dashboards/node_red_mqtt_flow.json → rename to nodered_victron_flow.json
 config/user_settings.example.py → rename to user_settings.py
 config/victron_ble2mqtt.toml
 config/victron_ble2mqtt.service
@@ -189,7 +190,53 @@ mqtt:
 2. Restart HA.
 3. Import `dashboards/home_assistant_victron.json` to your dashboard UI.
 
-## 9. Auto-Start on Boot
+## 9. Node-RED Integration Options
+
+You can run Node-RED either on your Raspberry Pi or your TrueNAS server. Choose **one** of the following setups:
+
+### Option A: Node-RED on Raspberry Pi
+
+```bash
+sudo apt install -y nodered
+sudo systemctl enable nodered.service
+sudo systemctl start nodered.service
+```
+
+Access Node-RED:
+
+```
+http://<pi_ip>:1880
+```
+
+Then:
+
+* Go to menu → *Import*
+* Paste contents of `dashboards/nodered_victron_flow.json`
+* Click *Deploy*
+
+---
+
+### Option B: Node-RED on TrueNAS
+
+If you're running Node-RED on your TrueNAS server:
+
+1. Open Node-RED:
+
+```
+http://<truenas_ip>:1880
+```
+
+2. Import flow:
+
+* Top right menu → *Import*
+* Paste contents of `dashboards/nodered_victron_flow.json`
+* Click *Deploy*
+
+3. Make sure the MQTT server IP is set to your Pi's static IP (e.g., `192.168.1.241`) inside the MQTT node.
+
+---
+
+## 10. Auto-Start on Boot
 
 Double check the service:
 
@@ -203,7 +250,7 @@ Enable auto-start:
 sudo systemctl enable victron_ble2mqtt.service
 ```
 
-## 10. Reboot Test
+## 11. Reboot Test
 
 Reboot:
 
@@ -214,17 +261,18 @@ sudo reboot
 Check:
 
 * Data shows in Home Assistant
+* Node-RED dashboard is updating
 * Service is running: `systemctl status victron_ble2mqtt.service`
 
 ---
 
 ## Final Notes
 
-This process sets up a fully offline, headless Victron BLE to MQTT bridge.
-Make sure your GitHub repo contains:
+This process sets up a fully offline, headless Victron BLE to MQTT bridge with optional Node-RED and Home Assistant dashboards. Make sure your GitHub repo contains:
 
 * Custom BLE logic
 * Home Assistant dashboard files
+* Node-RED dashboard flow (named `nodered_victron_flow.json`)
 * Systemd service file
 * Working TOML and user settings templates
 
