@@ -1,0 +1,50 @@
+[
+  {
+    "id": "mqtt-in-1",
+    "type": "mqtt in",
+    "z": "example-flow",
+    "name": "Victron MQTT",
+    "topic": "victron/#",
+    "qos": "2",
+    "datatype": "auto",
+    "broker": "mqtt-broker-config",
+    "x": 120,
+    "y": 100,
+    "wires": [["debug-1"]]
+  },
+  {
+    "id": "debug-1",
+    "type": "debug",
+    "z": "example-flow",
+    "name": "MQTT Output",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "true",
+    "targetType": "full",
+    "x": 340,
+    "y": 100,
+    "wires": []
+  },
+  {
+    "id": "mqtt-broker-config",
+    "type": "mqtt-broker",
+    "name": "MQTT Broker",
+    "broker": "YOUR_MQTT_BROKER_IP",
+    "port": "1883",
+    "clientid": "",
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthPayload": "",
+    "closeTopic": "",
+    "closePayload": "",
+    "willTopic": "",
+    "willQos": "0",
+    "willPayload": ""
+  }
+]
