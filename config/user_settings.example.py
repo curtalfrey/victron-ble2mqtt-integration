@@ -1,31 +1,31 @@
 """
 user_settings.example.py
-Edit this file and copy it to `victron_ble2mqtt/user_settings.py`
+
+This file replaces the deprecated TOML configuration.
+Copy this file to: `victron_ble2mqtt/user_settings.py` and edit as needed.
 """
 
-# Set your MQTT connection
+# MQTT Configuration
 mqtt_host = "localhost"
 mqtt_port = 1883
 mqtt_username = "your-username"
 mqtt_password = "your-password"
 
-# List your Victron BLE devices here
+# List of Victron BLE devices to monitor
 devices = [
     {
-        # Victron SmartShunt
-        "mac": "XX:XX:XX:XX:XX:XX",  # <- Replace with real MAC
+        "mac": "XX:XX:XX:XX:XX:XX",  # Replace with actual MAC
         "type": "SmartShunt",
         "name": "Battery 1",
         "advertisement_key": "your_advertisement_key"
     },
     {
-        # Victron MPPT
-        "mac": "YY:YY:YY:YY:YY:YY",
+        "mac": "YY:YY:YY:YY:YY:YY",  # Replace with actual MAC
         "type": "BlueSolar",
         "name": "Solar 1",
         "advertisement_key": "your_advertisement_key"
     }
 ]
 
-# Logging level (optional)
+# Optional: Set the logging level
 log_level = "INFO"
