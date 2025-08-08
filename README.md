@@ -33,11 +33,11 @@ All dashboard files are located under the `dashboards/` folder.
 ## 🔧 Setup
 
 
-## 📄 Installation Guide
 
-For a complete, step-by-step install guide (from Pi setup to Home Assistant integration), see:
 
-👉 [Victron BLE to MQTT Integration Setup Guide](https://github.com/curtalfrey/victron-ble2mqtt-integration/blob/main/Victron%20Ble2mqtt%20Install.md)
+
+📄 **Installation Guide:** [Victron BLE to MQTT Integration Setup Guide](https://github.com/curtalfrey/victron-ble2mqtt-integration/blob/main/Victron%20Ble2mqtt%20Install.md)
+
 
 
 
