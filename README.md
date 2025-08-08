@@ -34,10 +34,7 @@ All dashboard files are located under the `dashboards/` folder.
 
 
 
-
-
-📄 **Installation Guide:** [Victron BLE to MQTT Integration Setup Guide](https://github.com/curtalfrey/victron-ble2mqtt-integration/blob/main/Victron%20Ble2mqtt%20Install.md)
-
+📄 **Installation Guide:** [Victron BLE to MQTT Integration Setup Guide](https://github.com/curtalfrey/victron-ble2mqtt-integration/blob/main/Victron_BLE_to_MQTT_Integration_Setup_Guide.md)
 
 
 
