@@ -234,4 +234,4 @@ Fork and share: [GitHub Repo](https://github.com/curtalfrey/victron-ble2mqtt-int
 
 To install this integration from a fresh Raspberry Pi OS Lite image, follow the complete setup guide here:
 
-👉 [View the Full Install Guide](https://github.com/curtalfrey/victron-ble2mqtt-integration/blob/main/Victron%20Ble2mqtt%20Install.md)
+👉 [View the Full Install Guide](https://github.com/curtalfrey/victron-ble2mqtt-integration/blob/main/Victron_BLE_to_MQTT_Integration_Setup_Guide.md)
