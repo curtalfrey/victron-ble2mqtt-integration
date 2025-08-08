@@ -1,0 +1,237 @@
+# Victron BLE to MQTT Integration Setup Guide
+
+This guide walks through the complete setup of a Raspberry Pi 4 running Raspberry Pi OS Lite to scan Victron BLE devices (e.g., SmartShunts, MPPTs), publish the data to MQTT, and integrate with Home Assistant. No GUI required. Copy-paste friendly.
+
+---
+
+## Table of Contents
+
+1. [Initial Pi Setup](#1-initial-pi-setup)
+2. [Enable Wi-Fi with Static IP](#2-enable-wi-fi-with-static-ip)
+3. [Python Virtual Environment Setup](#3-python-virtual-environment-setup)
+4. [Clone Repositories](#4-clone-repositories)
+5. [Apply Integration Fixes](#5-apply-integration-fixes)
+6. [Systemd Service Configuration](#6-systemd-service-configuration)
+7. [Mosquitto MQTT Broker Setup](#7-mosquitto-mqtt-broker-setup)
+8. [Home Assistant Integration](#8-home-assistant-integration)
+9. [Auto-Start on Boot](#9-auto-start-on-boot)
+10. [Reboot Test](#10-reboot-test)
+
+---
+
+## 1. Initial Pi Setup
+
+* Flash Raspberry Pi OS Lite using Raspberry Pi Imager.
+* Insert SD card, boot Pi, and connect monitor + keyboard.
+* Create a user (e.g., `n4s1`) and log in.
+
+Update and install essentials:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y git python3-pip python3-venv tree net-tools network-manager
+```
+
+## 2. Enable Wi-Fi with Static IP
+
+Edit the Wi-Fi config:
+
+```bash
+sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
+```
+
+Paste this (replace with your values):
+
+```conf
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+country=US
+
+network={
+    ssid="YOUR_SSID"
+    psk="YOUR_PASSWORD"
+    key_mgmt=WPA-PSK
+}
+```
+
+Then run:
+
+```bash
+sudo nmcli device set wlan0 managed yes
+sudo systemctl restart NetworkManager
+```
+
+Connect to your network:
+
+```bash
+sudo nmcli device wifi connect "YOUR_SSID" password "YOUR_PASSWORD"
+```
+
+Set a static IP:
+
+```bash
+sudo nmcli connection modify "YOUR_SSID" ipv4.addresses 192.168.1.241/24 ipv4.gateway 192.168.1.1 ipv4.dns 1.1.1.1 ipv4.method manual
+sudo nmcli connection up "YOUR_SSID"
+```
+
+## 3. Python Virtual Environment Setup
+
+```bash
+python3 -m venv ~/victron-venv
+source ~/victron-venv/bin/activate
+```
+
+## 4. Clone Repositories
+
+```bash
+cd ~
+git clone https://github.com/velospic/victron-ble2mqtt.git
+mkdir victron-ble2mqtt-integration
+cd victron-ble2mqtt-integration
+git init
+```
+
+## 5. Apply Integration Fixes
+
+Manually copy these files into your integration repo:
+
+```
+custom/custom_victron_ble_utils.py
+patches/ha_services/sensor.py
+dashboards/home_assistant_victron.json
+dashboards/node_red_mqtt_flow.json
+config/user_settings.example.py → rename to user_settings.py
+config/victron_ble2mqtt.toml
+config/victron_ble2mqtt.service
+```
+
+Edit `user_settings.py` and `victron_ble2mqtt.toml` to match your BLE MACs and desired MQTT topics.
+
+## 6. Systemd Service Configuration
+
+Copy the service file:
+
+```bash
+sudo cp ~/victron-ble2mqtt-integration/config/victron_ble2mqtt.service /etc/systemd/system/
+```
+
+Edit it to reflect your user and path:
+
+```ini
+[Unit]
+Description=victron_ble2mqtt service
+After=network-online.target
+
+[Service]
+User=n4s1
+Group=n4s1
+WorkingDirectory=/home/n4s1/victron-ble2mqtt
+ExecStart=/home/n4s1/victron-venv/bin/python3 -m victron_ble2mqtt publish-loop
+Restart=always
+SyslogIdentifier=victron_ble2mqtt
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then enable it:
+
+```bash
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable victron_ble2mqtt.service
+```
+
+## 7. Mosquitto MQTT Broker Setup
+
+```bash
+sudo apt install mosquitto mosquitto-clients -y
+```
+
+Create MQTT config:
+
+```bash
+sudo nano /etc/mosquitto/conf.d/allow_local.conf
+```
+
+Paste:
+
+```conf
+listener 1883 127.0.0.1
+allow_anonymous true
+```
+
+Restart:
+
+```bash
+sudo systemctl restart mosquitto
+```
+
+Test:
+
+```bash
+mosquitto_sub -h 127.0.0.1 -t "homeassistant/#" -v
+```
+
+## 8. Home Assistant Integration
+
+In Home Assistant:
+
+1. Enable MQTT in `configuration.yaml`:
+
+```yaml
+mqtt:
+  broker: 192.168.1.241
+  discovery: true
+```
+
+2. Restart HA.
+3. Import `dashboards/home_assistant_victron.json` to your dashboard UI.
+
+## 9. Auto-Start on Boot
+
+Double check the service:
+
+```bash
+sudo systemctl status victron_ble2mqtt.service
+```
+
+Enable auto-start:
+
+```bash
+sudo systemctl enable victron_ble2mqtt.service
+```
+
+## 10. Reboot Test
+
+Reboot:
+
+```bash
+sudo reboot
+```
+
+Check:
+
+* Data shows in Home Assistant
+* Service is running: `systemctl status victron_ble2mqtt.service`
+
+---
+
+## Final Notes
+
+This process sets up a fully offline, headless Victron BLE to MQTT bridge.
+Make sure your GitHub repo contains:
+
+* Custom BLE logic
+* Home Assistant dashboard files
+* Systemd service file
+* Working TOML and user settings templates
+
+Fork and share: [GitHub Repo](https://github.com/curtalfrey/victron-ble2mqtt-integration)
+
+## 📄 Installation Guide in README
+
+To install this integration from a fresh Raspberry Pi OS Lite image, follow the complete setup guide here:
+
+👉 [View the Full Install Guide](https://github.com/curtalfrey/victron-ble2mqtt-integration/blob/main/Victron%20Ble2mqtt%20Install.md)
