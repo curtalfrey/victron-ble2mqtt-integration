@@ -4,7 +4,7 @@ This repository provides working examples and templates for integrating Victron 
 
 ## ⚠️ Compatibility and Scope
 
-* Confirmed working with Victron 75/15 MPPTs, Victron SmartShunt, and Venus OS running on Raspberry Pi.
+* Confirmed working with but not limited to, Victron 75/15 MPPTs, Victron SmartShunt, and Venus OS running on Raspberry Pi.
 * Current integrations include:
 
   * Home Assistant (via MQTT dashboard)
@@ -104,7 +104,49 @@ If `user_settings.toml` is not being loaded or is causing errors, skip it comple
 
 > 📝 Refoss integration is entirely local and does not rely on cloud services.
 
+🧭 Dashboards & Example Flows
+This project includes example dashboards for Home Assistant and Node-RED to help you quickly visualize and use MQTT data published by victron-ble2mqtt.
 
+📁 Location:
+All example files are in the dashboards/ directory.
+
+🟦 Home Assistant
+File: home_assistant_victron.json
+Description: A sample Lovelace dashboard showing Victron SmartShunt and MPPT data via MQTT.
+Usage:
+
+Go to Home Assistant > Settings > Dashboards > Raw Config Editor
+
+Import the JSON, then replace any example MQTT topics, MACs, or entity IDs with your own
+
+🟨 Node-RED
+1. example_nodered_victron_flow.json
+Uses victron/# topic filter
+
+Good for general Victron MQTT data testing
+
+Broker address is set to YOUR_MQTT_BROKER_IP (replace with yours)
+
+2. example_homeassistant_flow.json
+Uses homeassistant/# topic filter
+
+Best for visualizing MQTT messages published by Home Assistant’s auto-discovery
+
+Also includes YOUR_MQTT_BROKER_IP placeholder
+
+To import:
+In Node-RED, click the menu (☰) → Import → paste JSON or upload the file.
+
+⚠️ Notes
+These files are examples only — be sure to update:
+
+broker IP address
+
+MQTT topics
+
+Any MAC addresses or device-specific filters
+
+Avoid importing multiple flows with the same Node IDs; Node-RED will automatically fix conflicts if they arise.
 
 ## 📌 Keywords for Searchability
 
