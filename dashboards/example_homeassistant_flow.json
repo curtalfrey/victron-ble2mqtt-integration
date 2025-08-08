@@ -1,44 +1,41 @@
 [
   {
-    "id": "mqtt_in_victron",
+    "id": "mqtt-in-1",
     "type": "mqtt in",
-    "z": "flow1",
-    "name": "Victron MQTT In",
-    "topic": "N/XX:XX:XX:XX:XX:XX/system/0/Serial",
-    "qos": "0",
+    "z": "victron-ble2mqtt-nodered",
+    "name": "Victron MQTT",
+    "topic": "homeassistant/#",
+    "qos": "2",
     "datatype": "auto",
-    "broker": "mqtt_broker_config",
-    "x": 140,
+    "broker": "mqtt-broker-config",
+    "x": 120,
     "y": 100,
-    "wires": [
-      [
-        "debug_victron"
-      ]
-    ]
+    "wires": [["debug-1"]]
   },
   {
-    "id": "debug_victron",
+    "id": "debug-1",
     "type": "debug",
-    "z": "flow1",
-    "name": "Debug Victron",
+    "z": "victron-ble2mqtt-nodered",
+    "name": "MQTT Output",
     "active": true,
     "tosidebar": true,
     "console": false,
     "tostatus": false,
     "complete": "true",
-    "x": 360,
+    "targetType": "full",
+    "x": 340,
     "y": 100,
     "wires": []
   },
   {
-    "id": "mqtt_broker_config",
+    "id": "mqtt-broker-config",
     "type": "mqtt-broker",
-    "name": "Local Mosquitto Broker",
-    "broker": "localhost",
+    "name": "Local MQTT Broker",
+    "broker": "YOUR_MQTT_BROKER_IP",
     "port": "1883",
-    "clientid": "victron-nodered",
+    "clientid": "",
     "usetls": false,
-    "compatmode": false,
+    "protocolVersion": "4",
     "keepalive": "60",
     "cleansession": true,
     "birthTopic": "",
