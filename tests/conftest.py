@@ -22,6 +22,30 @@ warnings.filterwarnings(
 )
 
 
+@pytest.fixture(autouse=True)
+def _isolate_ha_services_global_registry():
+    """Reset ha-services' global component/device registry between tests.
+
+    ha-services 2.13.0 made the component registry global (class-level on
+    BaseMqttDevice), so two tests creating devices with the same uid hit
+    'Duplicate component' assertions. Upstream added a cleanup method in
+    2.15.4 (jedie/ha-services#103), but 2.15.4 requires Python >=3.12 and we
+    pin 2.15.2 (image/CI run 3.11) — reset the class-level state directly.
+    """
+    try:
+        from ha_services.mqtt4homeassistant.device import BaseMqttDevice
+    except ImportError:
+        yield
+        return
+    saved_components = dict(BaseMqttDevice.components)
+    saved_uids = set(BaseMqttDevice.device_uids)
+    yield
+    BaseMqttDevice.components.clear()
+    BaseMqttDevice.components.update(saved_components)
+    BaseMqttDevice.device_uids.clear()
+    BaseMqttDevice.device_uids.update(saved_uids)
+
+
 def _is_port_open(host: str, port: int) -> bool:
     try:
         with socket.create_connection((host, port), timeout=0.5):

@@ -22,16 +22,9 @@ class MqttPublisherHelper:
         self.victron_mqtt_handler = victron_mqtt_handler
         self.mqtt_client = mqtt_client
 
-        self.rssi_info = {}
-
-    def _detection_callback(self, device: Any, advertisement):
-        # record rssi if present
-        try:
-            self.rssi_info[device.address] = advertisement.rssi
-        except Exception:
-            pass
-
-    def callback(self, ble_device: Any, raw_data: bytes):
+    # victron-ble 0.9.3: BaseScanner.callback() receives the bleak
+    # AdvertisementData as third argument — RSSI comes straight from it.
+    def callback(self, ble_device: Any, raw_data: bytes, advertisement: Any):
         # emulate the CLI behavior: ask device_handler for generic device
         generic_device = None
         if self.device_handler is not None:
@@ -45,7 +38,7 @@ class MqttPublisherHelper:
                 ble_device=ble_device,
                 raw_data=raw_data,
                 generic_device=generic_device,
-                rssi=self.rssi_info.get(ble_device.address),
+                rssi=getattr(advertisement, 'rssi', None),
                 mqtt_client=self.mqtt_client,
             )
         else:

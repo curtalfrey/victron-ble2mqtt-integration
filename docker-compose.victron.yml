@@ -44,12 +44,15 @@ services:
         max-file: "5"
     # Use image entrypoint so it can generate /work/victron_ble2mqtt/user_settings.py
     # (Dockerfile sets CMD -> docker-entrypoint.sh which writes user_settings.py)
+    # Liveness probe: the publish loop touches HEARTBEAT_FILE after each successful
+    # system-info MQTT publish; healthcheck fails when the heartbeat is older than
+    # 20x SYSTEM_POLL_THROTTLE_SEC + 60s margin (wedged loop / dead MQTT => autoheal).
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import importlib; importlib.import_module('victron_ble2mqtt')\" || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import os,sys,time; p=os.environ.get('HEARTBEAT_FILE','/tmp/victron_ble2mqtt.heartbeat'); max_age=20*float(os.environ.get('SYSTEM_POLL_THROTTLE_SEC') or 3)+60; m=os.path.getmtime(p) if os.path.exists(p) else 0; sys.exit(0 if time.time()-m<=max_age else 1)\" || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 60s
     deploy:
       resources:
         limits:

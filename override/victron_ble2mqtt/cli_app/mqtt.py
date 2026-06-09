@@ -58,13 +58,9 @@ def publish_loop(verbosity: TyroVerbosityArgType):
             self.mqtt_client = get_connected_client(settings=user_settings.mqtt, verbosity=verbosity)
             self.mqtt_client.loop_start()
 
-            self.rssi_info = {}
-
-        def _detection_callback(self, device: BLEDevice, advertisement: AdvertisementData):
-            self.rssi_info[device.address] = advertisement.rssi
-            return super()._detection_callback(device, advertisement)
-
-        def callback(self, ble_device: BLEDevice, raw_data: bytes):
+        # victron-ble 0.9.3: BaseScanner.callback() now receives the bleak
+        # AdvertisementData as third argument — RSSI comes straight from it.
+        def callback(self, ble_device: BLEDevice, raw_data: bytes, advertisement: AdvertisementData):
             logger.debug(f'Received data from {ble_device.address.lower()}: {raw_data.hex()}')
 
             if generic_device := self.device_handler.get_generic_device(ble_device, raw_data):
@@ -72,7 +68,7 @@ def publish_loop(verbosity: TyroVerbosityArgType):
                     ble_device=ble_device,
                     raw_data=raw_data,
                     generic_device=generic_device,
-                    rssi=self.rssi_info.get(ble_device.address),
+                    rssi=advertisement.rssi,
                     mqtt_client=self.mqtt_client,
                 )
             else:

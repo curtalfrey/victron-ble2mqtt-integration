@@ -36,9 +36,8 @@ def test_callback_routes_to_publish():
     FakeBLE = types.SimpleNamespace(address='AA:BB:CC:11:22:33', name='FAKE')
     FakeAdv = types.SimpleNamespace(rssi=-66)
 
-    # record rssi via detection callback
-    pub._detection_callback(FakeBLE, FakeAdv)
-    pub.callback(FakeBLE, b'\x01')
+    # victron-ble 0.9.3 passes the AdvertisementData as third callback argument
+    pub.callback(FakeBLE, b'\x01', FakeAdv)
 
     assert calls.get('get_generic_device') is True
     assert calls.get('published') is True

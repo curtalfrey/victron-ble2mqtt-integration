@@ -26,6 +26,20 @@ from victron_ble2mqtt.cli_app.settings import get_settings
 from victron_ble2mqtt.mqtt import VictronMqttDeviceHandler
 from victron_ble2mqtt.victron_ble_utils import DeviceHandler
 
+# Liveness heartbeat: the publish loop touches this file after each successful
+# system-info publish; the container healthcheck fails when it goes stale.
+HEARTBEAT_FILE = os.getenv("HEARTBEAT_FILE", "/tmp/victron_ble2mqtt.heartbeat")
+
+_module_logger = logging.getLogger(__name__)
+
+
+def touch_heartbeat(path: str = HEARTBEAT_FILE) -> None:
+    try:
+        with open(path, "a"):
+            os.utime(path, None)
+    except OSError as e:
+        _module_logger.warning("Cannot touch heartbeat file %s: %s", path, e)
+
 
 def _build_mqtt_client(host: str, port: int, username: str | None, password: str | None) -> PahoClient:
     client = PahoClient(callback_api_version=CallbackAPIVersion.VERSION2)
@@ -83,17 +97,18 @@ def main() -> None:
             # USB BLE dongles are often hci1 while the Pi built-in is hci0; victron_ble's
             # BaseScanner defaults to BlueZ default adapter. Override via .env:
             #   BLE_ADAPTER=hci1   (or VICTRON_BLE_ADAPTER=hci1)
+            # bleak 3.x: 'adapter=' kwarg is deprecated -> bluez={'adapter': ...}
+            # (https://github.com/hbldh/bleak/blob/develop/CHANGELOG.rst, v3.0.0)
             _adapter = (os.getenv("BLE_ADAPTER") or os.getenv("VICTRON_BLE_ADAPTER") or "").strip()
             if _adapter:
                 self._scanner = BleakScanner(
                     detection_callback=self._detection_callback,
-                    adapter=_adapter,
+                    bluez={"adapter": _adapter},
                 )
                 logger.info("BLE scanner using adapter %s (BLE_ADAPTER / VICTRON_BLE_ADAPTER)", _adapter)
             self.device_handler = DeviceHandler(keys)
             self.victron_mqtt_handler = VictronMqttDeviceHandler(user_settings=user_settings)
             self.mqtt_client = paho
-            self.rssi_info: dict[str, int] = {}
             # Throttles
             self._last_pub: dict[str, float] = {}
             self._pub_gap = float(getattr(user_settings.mqtt, 'publish_throttle_seconds', 3) or 3)
@@ -114,14 +129,14 @@ def main() -> None:
                     self.victron_mqtt_handler.main_mqtt_device.poll_and_publish(self.mqtt_client)
                 except Exception as e:
                     logger.warning("System info publish failed: %s", e)
+                else:
+                    if self.mqtt_client.is_connected():
+                        touch_heartbeat()
                 await _asyncio.sleep(self._sys_poll_gap)
 
-        def _detection_callback(self, device: BLEDevice, advertisement: AdvertisementData):
-            # cache latest RSSI by MAC
-            self.rssi_info[device.address] = advertisement.rssi
-            return super()._detection_callback(device, advertisement)
-
-        def callback(self, ble_device: BLEDevice, raw_data: bytes):
+        # victron-ble 0.9.3: BaseScanner.callback() now receives the bleak
+        # AdvertisementData as third argument — RSSI comes straight from it.
+        def callback(self, ble_device: BLEDevice, raw_data: bytes, advertisement: AdvertisementData):
             import time
             now = time.monotonic()
             # Rate-limit noisy debug
@@ -135,7 +150,7 @@ def main() -> None:
                         ble_device=ble_device,
                         raw_data=raw_data,
                         generic_device=generic,
-                        rssi=self.rssi_info.get(ble_device.address),
+                        rssi=advertisement.rssi,
                         mqtt_client=self.mqtt_client,
                     )
                 else:
