@@ -1,4 +1,5 @@
 from importlib import metadata
+
 try:
     __version__ = metadata.version("victron-ble2mqtt")
 except Exception:

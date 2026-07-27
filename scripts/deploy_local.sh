@@ -265,7 +265,7 @@ if docker ps -a --format '{{.Names}}' | grep -qw homeassistant; then
 else
   docker run -d --name homeassistant --restart unless-stopped \
     --network host -e TZ="$HA_TZ" -v "$HA_CONFIG_DIR":/config \
-    ghcr.io/home-assistant/home-assistant:stable >/dev/null
+    "${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.7.3}" >/dev/null
 fi
 
 # Apply HA config changes by restarting the container if it's running

@@ -1,4 +1,7 @@
 ## Docker Compose v2 — Watchtower only (label-gated updates). Portainer/Dozzle/nginx removed; use Dockge on :5006.
+## With WATCHTOWER_LABEL_ENABLE=true, only containers that set
+## com.centurylinklabs.watchtower.enable=true are updated. HA and victron_ble2mqtt
+## intentionally omit that label so pinned images stay put until operators bump tags.
 services:
   watchtower:
     image: containrrr/watchtower:1.7.1

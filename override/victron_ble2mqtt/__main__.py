@@ -14,9 +14,10 @@ and works with PYTHONPATH prioritizing /app/override before /app.
 import asyncio
 import logging
 import os
-from typing import List, Dict, Any
+import time
+from typing import Any
 
-from bleak import AdvertisementData, BLEDevice, BleakScanner
+from bleak import AdvertisementData, BleakScanner, BLEDevice
 from paho.mqtt.client import Client as PahoClient
 from paho.mqtt.enums import CallbackAPIVersion
 from victron_ble.scanner import BaseScanner
@@ -41,7 +42,9 @@ def touch_heartbeat(path: str = HEARTBEAT_FILE) -> None:
         _module_logger.warning("Cannot touch heartbeat file %s: %s", path, e)
 
 
-def _build_mqtt_client(host: str, port: int, username: str | None, password: str | None) -> PahoClient:
+def _build_mqtt_client(
+    host: str, port: int, username: str | None, password: str | None
+) -> PahoClient:
     client = PahoClient(callback_api_version=CallbackAPIVersion.VERSION2)
     if username:
         client.username_pw_set(username, password or "")
@@ -50,7 +53,7 @@ def _build_mqtt_client(host: str, port: int, username: str | None, password: str
     return client
 
 
-def _settings_to_keys(user_settings) -> List[Dict[str, Any]]:
+def _settings_to_keys(user_settings) -> list[dict[str, Any]]:
     # Convert dataclass device entries to the dict structure DeviceHandler expects.
     keys = []
     for d in getattr(user_settings, "devices", []):
@@ -83,7 +86,9 @@ def main() -> None:
     logger.info("victron_ble2mqtt starting with %d device entries", len(keys))
 
     # Prepare MQTT client (paho-mqtt)
-    uname = getattr(user_settings.mqtt, "user_name", None) or getattr(user_settings.mqtt, "username", None)
+    uname = getattr(user_settings.mqtt, "user_name", None) or getattr(
+        user_settings.mqtt, "username", None
+    )
     paho = _build_mqtt_client(
         host=getattr(user_settings.mqtt, "host", "localhost"),
         port=int(getattr(user_settings.mqtt, "port", 1883)),
@@ -92,7 +97,7 @@ def main() -> None:
     )
 
     class MqttPublisher(BaseScanner):
-        def __init__(self, *, keys: List[Dict[str, Any]]):
+        def __init__(self, *, keys: list[dict[str, Any]]):
             super().__init__()
             # USB BLE dongles are often hci1 while the Pi built-in is hci0; victron_ble's
             # BaseScanner defaults to BlueZ default adapter. Override via .env:
@@ -105,17 +110,21 @@ def main() -> None:
                     detection_callback=self._detection_callback,
                     bluez={"adapter": _adapter},
                 )
-                logger.info("BLE scanner using adapter %s (BLE_ADAPTER / VICTRON_BLE_ADAPTER)", _adapter)
+                logger.info(
+                    "BLE scanner using adapter %s (BLE_ADAPTER / VICTRON_BLE_ADAPTER)", _adapter
+                )
             self.device_handler = DeviceHandler(keys)
             self.victron_mqtt_handler = VictronMqttDeviceHandler(user_settings=user_settings)
             self.mqtt_client = paho
             # Throttles
             self._last_pub: dict[str, float] = {}
-            self._pub_gap = float(getattr(user_settings.mqtt, 'publish_throttle_seconds', 3) or 3)
-            self._log_gap = float(getattr(user_settings.mqtt, 'log_throttle_seconds', 3) or 3)
+            self._pub_gap = float(getattr(user_settings.mqtt, "publish_throttle_seconds", 3) or 3)
+            self._log_gap = float(getattr(user_settings.mqtt, "log_throttle_seconds", 3) or 3)
             self._last_warn: dict[str, float] = {}
             # System info periodic publish interval (seconds)
-            self._sys_poll_gap = float(getattr(user_settings.mqtt, 'system_poll_throttle_seconds', 3) or 3)
+            self._sys_poll_gap = float(
+                getattr(user_settings.mqtt, "system_poll_throttle_seconds", 3) or 3
+            )
 
         async def periodic_system_info_publish(self) -> None:
             """Publish Pi4 system info on a fixed interval regardless of BLE traffic.
@@ -123,7 +132,6 @@ def main() -> None:
             This ensures Home Assistant state updates (e.g., CPU, temp, uptime) continue
             even when Victron BLE devices are out of range or silent.
             """
-            import asyncio as _asyncio
             while True:
                 try:
                     self.victron_mqtt_handler.main_mqtt_device.poll_and_publish(self.mqtt_client)
@@ -132,12 +140,13 @@ def main() -> None:
                 else:
                     if self.mqtt_client.is_connected():
                         touch_heartbeat()
-                await _asyncio.sleep(self._sys_poll_gap)
+                await asyncio.sleep(self._sys_poll_gap)
 
         # victron-ble 0.9.3: BaseScanner.callback() now receives the bleak
         # AdvertisementData as third argument — RSSI comes straight from it.
-        def callback(self, ble_device: BLEDevice, raw_data: bytes, advertisement: AdvertisementData):
-            import time
+        def callback(
+            self, ble_device: BLEDevice, raw_data: bytes, advertisement: AdvertisementData
+        ):
             now = time.monotonic()
             # Rate-limit noisy debug
             if logger.isEnabledFor(logging.DEBUG):
@@ -158,7 +167,11 @@ def main() -> None:
                     lw = self._last_warn.get(ble_device.address, 0.0)
                     if (now - lw) >= self._log_gap:
                         self._last_warn[ble_device.address] = now
-                        logger.info("Throttled publish for %s (gap %.1fs)", ble_device.address, self._pub_gap)
+                        logger.info(
+                            "Throttled publish for %s (gap %.1fs)",
+                            ble_device.address,
+                            self._pub_gap,
+                        )
             else:
                 lw = self._last_warn.get(ble_device.address + ":unsupported", 0.0)
                 if (now - lw) >= self._log_gap:

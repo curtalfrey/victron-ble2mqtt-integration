@@ -1,17 +1,23 @@
-# Next Steps — victron-ble2mqtt-integration
+# Next steps — victron-ble2mqtt-integration
 
-## Next step (planned): research + audit subagent pass
+## Done in 2026-07 repo cleanup
 
-Run the two-stage subagent workflow developed in `alfa-ai/docs/audit/` during the May 2026 ALFa AI architectural audit. The pattern surfaced 64 findings (17 Critical) on alfa-ai; we want the same coverage on every active repo before resuming feature work.
+- Untracked TLS key/cert (`ssl/tools.*`); see `SECURITY_REMOVE_SECRETS.md` for history purge.
+- Pinned Home Assistant image (Phase 7.5); CI lints `override/` + package; retired soft-fail `ci-lint.yml`.
+- Added `dotenv.sample`; corrected bootstrap path (alfa-ai) and clone URL; refreshed inventory / AI how-to stub.
 
-1. **Research Agent** — gathers OFFICIAL upstream docs for every technology this repo uses (Victron BLE protocol, MQTT broker version + auth, Home Assistant integration, Docker Swarm deployment, etc. — versions, security posture, best practices, deprecations). Writes per-component facts + an audit checklist to `docs/audit/research/<component>.md` and a master `docs/audit/research/INDEX.md`.
-2. **Audit Agent** — reads the research files, audits this repo against the embedded checklists + cross-cutting checks (internal-doc consistency, stale references, security-currency vs published CVEs, cluster-rules compliance — port assignments, network names, deployment-process ownership, Docker build pattern). Writes findings + a severity-ranked remediation backlog to `docs/audit/audit-findings.md`.
+## Recommended next (in order)
 
-Both passes are read-only on the host stack — they only write into the new `docs/audit/` directory. Remediation is gated on explicit per-finding approval.
+1. **History purge + rotate** — if `ssl/tools.key` was ever pushed, run `git filter-repo` (see `SECURITY_REMOVE_SECRETS.md`) and issue a new cert on the Pi.
+2. **Hub reseed HA pin** — on `.111`, pull `ghcr.io/home-assistant/home-assistant:2026.7.3` and publish `home-assistant-2026.7.3.tar.gz`.
+3. **Unify package tree** — collapse `override/victron_ble2mqtt` into `victron_ble2mqtt/` (or the reverse) so there is one runtime source.
+4. **Phase 5 threat model** — short LAN threat paragraph in `DEPLOY.md` (Dockge `:5006`, MQTT plaintext, Watchtower socket).
+5. **Optional audit pass** — research/audit under `docs/audit/` using the alfa-ai pattern (still valid; not blocking).
 
-**Reference workflow:**
-- Pattern: `/home/ansible/alfa-ai/docs/audit/`
-- Research output format: `/home/ansible/alfa-ai/docs/audit/research/INDEX.md`
-- Audit output format: `/home/ansible/alfa-ai/docs/audit/audit-findings.md`
+## Canonical docs
 
-Added 2026-05-13 after the alfa-ai audit proved the pattern at scale.
+| Doc | Use |
+|-----|-----|
+| `DEPLOY.md` | Install / redeploy |
+| `docs/ENGINEERING_STANDARDS_PLAN.md` | Standards roadmap |
+| `REPO_INVENTORY.md` | Layout map |

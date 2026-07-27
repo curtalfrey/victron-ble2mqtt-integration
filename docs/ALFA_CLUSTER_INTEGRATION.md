@@ -6,13 +6,13 @@ This repo runs on a **Raspberry Pi** (or similar) as a **home / Victron / MQTT /
 
 ## alfa-ai — see, analyze, and edit this repo in Cursor
 
-On the development host (e.g. **web-sites** / `.105`), keep clones as **siblings** so one Cursor workspace can index all of them:
+Keep clones as **siblings** so one Cursor workspace can index them:
 
-| Repo | Typical path |
-|------|----------------|
-| **alfa-ai** | `/home/ansible/alfa-ai` |
-| **victron-ble2mqtt-integration** | `/home/ansible/victron-ble2mqtt-integration` |
-| **monitoring** | `/home/ansible/monitoring` |
+| Repo | Typical path (examples) |
+|------|-------------------------|
+| **alfa-ai** | `C:\Users\gamerx\alfa-ai` (`.93`) or `/home/ansible/alfa-ai` (`.105`) |
+| **victron-ble2mqtt-integration** | `C:\Users\gamerx\victron-ble2mqtt-integration` or `/home/ansible/victron-ble2mqtt-integration` |
+| **monitoring** | sibling `monitoring` clone on the same host |
 
 **Cursor:** **File → Add Folder to Workspace…** and add the two other folders (or open a multi-root `.code-workspace` that lists all three). Agents and search then apply across repos without merging git histories.
 
@@ -33,7 +33,7 @@ Alfa’s **canonical hub** policy and paths are documented in:
 
 1. **Docker Hub pulls** — merges **`registry-mirrors: ["http://192.168.0.111:5000"]`** into **`/etc/docker/daemon.json`** (disable with **`ENABLE_DOCKER_REGISTRY_MIRROR=0`**).
 2. **PyPI wheels** — when NFS **`/mnt/cluster/wheels/victron`** is mounted, runs **`scripts/sync-victron-wheels-from-hub.sh`** into repo **`./wheels`** and builds with **`PIP_OFFLINE=1`** (see **`DOCKER_BUILD_PATTERN.md`**). Seed on `.111`: **`alfa-ai/scripts/seed-victron-wheels-truenas.sh`**.
-3. **Home Assistant (GHCR)** — the hub mirror does **not** proxy GHCR. Seed on `.111`: `docker pull ghcr.io/home-assistant/home-assistant:stable` then **`alfa-ai/scripts/publish-built-image-to-hub.sh`** … **`home-assistant-stable.tar.gz`**. On the Pi, **`deploy.sh`** runs **`docker load`** from **`/mnt/cluster/docker-images/home-assistant-stable.tar.gz`** (or alternate hub paths / **`HA_IMAGE_TARBALL`**) before Compose starts HA.
+3. **Home Assistant (GHCR)** — the hub mirror does **not** proxy GHCR. Pin matches Compose (`HA_IMAGE`, default **`2026.7.3`**). Seed on `.111`: `docker pull ghcr.io/home-assistant/home-assistant:2026.7.3` then **`alfa-ai/scripts/publish-built-image-to-hub.sh`** … **`home-assistant-2026.7.3.tar.gz`**. On the Pi, **`deploy.sh`** loads that tarball (or legacy **`home-assistant-stable.tar.gz`**, retagged to the pin) before Compose starts HA. Override with **`HA_IMAGE`** / **`HA_IMAGE_TARBALL`** in `.env` when needed.
 
 Mount **`/mnt/cluster`** per **`alfa-ai/docs/CLUSTER_SHARED_STORAGE.md`** so these paths resolve. If it is not mounted yet, **`scripts/deploy.sh`** (default **`ENSURE_TRUENAS_NFS_MOUNT=1`**) runs **`scripts/mount-truenas-hub.sh`** when **`.111`** responds to ping and victron wheels are not visible — or run **`sudo bash scripts/mount-truenas-hub.sh`** once yourself.
 

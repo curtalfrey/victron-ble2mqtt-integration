@@ -242,10 +242,15 @@ healthcheck fails when the last successful publish is older than N×
 
 ### 7.5 — Pin the Home Assistant container image
 
-`docker-compose.homeassistant.yml` + Watchtower control HA updates on the Pi. Pin
-HA to an explicit monthly tag and bump deliberately (coordinated with 7.1), instead
-of floating — same rationale as the workspace-wide "no `latest` in production"
-standard. Verify Watchtower labels gate HA out of auto-upgrade until 7.1 lands.
+**Status:** Done (2026-07) — Compose default
+`ghcr.io/home-assistant/home-assistant:2026.7.3` via `${HA_IMAGE:-…}` (override in
+`.env`). Official pin pattern:
+[Running a specific version](https://www.home-assistant.io/common-tasks/container/).
+Watchtower remains label-gated (`WATCHTOWER_LABEL_ENABLE=true`); HA omits
+`com.centurylinklabs.watchtower.enable`. Hub seed: pull the pinned tag on `.111`,
+publish `home-assistant-2026.7.3.tar.gz` (legacy `home-assistant-stable.tar.gz`
+still loads and is retagged by `deploy.sh`). Bump the pin deliberately after
+reading HA release notes.
 
 ### Operator deployment note (Pi) — Phase 7 rollout
 

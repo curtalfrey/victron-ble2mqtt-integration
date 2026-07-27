@@ -27,8 +27,8 @@ jobs:
           pip install ruff pytest
           pip install -r requirements.lock
 
-      - name: Ruff check
-        run: ruff check victron_ble2mqtt
+      - name: Ruff check (runtime override + package)
+        run: ruff check override/victron_ble2mqtt victron_ble2mqtt
 
       - name: Pytest
         run: pytest tests/ -q

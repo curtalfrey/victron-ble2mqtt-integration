@@ -127,5 +127,5 @@ fi
 echo ""
 echo "=== Mount Complete ==="
 echo "Victron offline wheels:  $LOCAL_MOUNT/wheels/victron/"
-echo "HA docker-load tarball: $LOCAL_MOUNT/docker-images/home-assistant-stable.tar.gz"
+echo "HA docker-load tarball: $LOCAL_MOUNT/docker-images/home-assistant-2026.7.3.tar.gz (or legacy home-assistant-stable.tar.gz)"
 echo "Docker Hub mirror:       ${TRUENAS_IP}:5000 (merged into daemon.json by deploy.sh)"

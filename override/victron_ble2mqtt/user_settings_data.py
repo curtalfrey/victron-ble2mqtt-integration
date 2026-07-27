@@ -41,7 +41,7 @@ devices = [
             "midpoint_voltage": 2,
             "midpoint_shift": 2,
             "midpoint_shift_percent": 2,
-            "remaining_mins": 0
+            "remaining_mins": 0,
         },
     },
     {
@@ -56,15 +56,17 @@ devices = [
     },
 ]
 
+
 # Inject advertisement keys from env:
 #  - Preferred: ADVKEY_<NAME_SLUG>  (e.g., ADVKEY_BATTERY_1)
 #  - Fallback:  ADVKEY_<MAC_WITHOUT_COLONS_UPPER>  (e.g., ADVKEY_D4EFFBB3D70C)
 def _slug(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "_", (s or "").strip()).strip("_").upper()
 
+
 for d in devices:
     name = d.get("name") or d.get("type") or ""
-    mac  = (d.get("mac") or "").replace(":", "").upper()
+    mac = (d.get("mac") or "").replace(":", "").upper()
     key = os.getenv("ADVKEY_" + _slug(name)) or (os.getenv("ADVKEY_" + mac) if mac else None)
     if key:
         d["advertisement_key"] = key

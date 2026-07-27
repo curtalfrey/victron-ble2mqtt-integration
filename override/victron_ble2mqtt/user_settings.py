@@ -1,8 +1,11 @@
+import importlib
+import os
+import socket
 from dataclasses import dataclass, field
-from typing import List, Optional, Any
-import importlib, os, socket
+from typing import Any, Optional
 
 from ha_services.mqtt4homeassistant.utilities.string_utils import slugify
+
 
 @dataclass
 class MqttConfig:
@@ -20,6 +23,7 @@ class MqttConfig:
     system_poll_throttle_seconds: int = 3  # min gap between system info polls
     log_throttle_seconds: int = 3  # min gap between repeated debug/warn logs
 
+
 @dataclass
 class DeviceEntry:
     mac: str
@@ -31,10 +35,12 @@ class DeviceEntry:
     # 'consumed_ah', 'midpoint_voltage', 'midpoint_shift', 'midpoint_shift_percent', 'remaining_mins'
     precision: Optional[dict[str, int]] = None
 
+
 @dataclass
 class UserSettings:
     mqtt: MqttConfig = field(default_factory=MqttConfig)
-    devices: List[DeviceEntry] = field(default_factory=list)
+    devices: list[DeviceEntry] = field(default_factory=list)
+
     def __post_init__(self) -> None:
         data = importlib.import_module("victron_ble2mqtt.user_settings_data")
         try:
@@ -48,16 +54,22 @@ class UserSettings:
         # Username/password from data or environment
         self.mqtt.username = getattr(data, "mqtt_username", None) or os.getenv("MQTT_USER") or None
         self.mqtt.user_name = getattr(data, "mqtt_username", None) or self.mqtt.username
-        self.mqtt.password = (
-            getattr(data, "mqtt_password", None)
-            or (os.getenv("MQTT_PASSWORD") if (self.mqtt.username or os.getenv("MQTT_USER")) else None)
+        self.mqtt.password = getattr(data, "mqtt_password", None) or (
+            os.getenv("MQTT_PASSWORD") if (self.mqtt.username or os.getenv("MQTT_USER")) else None
         )
 
         # Main UID and throttles (ha_services requires uid == slugify(uid); hostnames may contain '-')
-        _raw_main = getattr(data, "main_uid", None) or os.getenv("MAIN_UID") or socket.gethostname() or "victron"
+        _raw_main = (
+            getattr(data, "main_uid", None)
+            or os.getenv("MAIN_UID")
+            or socket.gethostname()
+            or "victron"
+        )
         self.mqtt.main_uid = slugify(str(_raw_main).strip(), sep="_")
 
-        pcs = getattr(data, "publish_config_throttle_seconds", None) or os.getenv("PUBLISH_CONFIG_THROTTLE_SEC")
+        pcs = getattr(data, "publish_config_throttle_seconds", None) or os.getenv(
+            "PUBLISH_CONFIG_THROTTLE_SEC"
+        )
         if pcs not in (None, ""):
             try:
                 self.mqtt.publish_config_throttle_seconds = int(pcs)
@@ -72,7 +84,9 @@ class UserSettings:
             except Exception:
                 pass
 
-        sths = getattr(data, "system_poll_throttle_seconds", None) or os.getenv("SYSTEM_POLL_THROTTLE_SEC")
+        sths = getattr(data, "system_poll_throttle_seconds", None) or os.getenv(
+            "SYSTEM_POLL_THROTTLE_SEC"
+        )
         if sths not in (None, ""):
             try:
                 self.mqtt.system_poll_throttle_seconds = int(sths)
@@ -87,8 +101,8 @@ class UserSettings:
                 pass
 
         # Device list normalization
-        raw_devices: List[dict[str, Any]] = list(getattr(data, "devices", []))
-        norm: List[DeviceEntry] = []
+        raw_devices: list[dict[str, Any]] = list(getattr(data, "devices", []))
+        norm: list[DeviceEntry] = []
         for d in raw_devices:
             if isinstance(d, dict):
                 norm.append(

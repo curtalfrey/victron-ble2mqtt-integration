@@ -34,14 +34,14 @@ def publish_loop(verbosity: TyroVerbosityArgType):
     # Build a list of dicts for DeviceHandler (mac/type/name/advertisement_key)
     keys = [
         {
-            'mac': getattr(d, 'mac', None),
-            'type': getattr(d, 'type', None),
-            'name': getattr(d, 'name', None),
-            'advertisement_key': getattr(d, 'advertisement_key', None),
+            "mac": getattr(d, "mac", None),
+            "type": getattr(d, "type", None),
+            "name": getattr(d, "name", None),
+            "advertisement_key": getattr(d, "advertisement_key", None),
         }
-        for d in getattr(user_settings, 'devices', [])
+        for d in getattr(user_settings, "devices", [])
     ]
-    print(f'Use device {len(keys)} device keys.')
+    print(f"Use device {len(keys)} device keys.")
 
     class MqttPublisher(BaseScanner):
         def __init__(
@@ -55,13 +55,17 @@ def publish_loop(verbosity: TyroVerbosityArgType):
             self.victron_mqtt_handler = VictronMqttDeviceHandler(user_settings=user_settings)
 
             # MQTT client
-            self.mqtt_client = get_connected_client(settings=user_settings.mqtt, verbosity=verbosity)
+            self.mqtt_client = get_connected_client(
+                settings=user_settings.mqtt, verbosity=verbosity
+            )
             self.mqtt_client.loop_start()
 
         # victron-ble 0.9.3: BaseScanner.callback() now receives the bleak
         # AdvertisementData as third argument — RSSI comes straight from it.
-        def callback(self, ble_device: BLEDevice, raw_data: bytes, advertisement: AdvertisementData):
-            logger.debug(f'Received data from {ble_device.address.lower()}: {raw_data.hex()}')
+        def callback(
+            self, ble_device: BLEDevice, raw_data: bytes, advertisement: AdvertisementData
+        ):
+            logger.debug(f"Received data from {ble_device.address.lower()}: {raw_data.hex()}")
 
             if generic_device := self.device_handler.get_generic_device(ble_device, raw_data):
                 self.victron_mqtt_handler.publish(
@@ -72,7 +76,7 @@ def publish_loop(verbosity: TyroVerbosityArgType):
                     mqtt_client=self.mqtt_client,
                 )
             else:
-                logger.warning(f'Unsupported: {ble_device.name} ({ble_device.address})')
+                logger.warning(f"Unsupported: {ble_device.name} ({ble_device.address})")
 
     async def scan(*, keys: list[dict], user_settings: UserSettings):
         scanner = MqttPublisher(

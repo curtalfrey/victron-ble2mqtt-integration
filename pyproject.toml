@@ -11,7 +11,6 @@ target-version = ["py39", "py310", "py311"]
 exclude = [
   "^/swarm/",
   "^/overrides/",
-  "^/override/",  # mounted at runtime; keep, but don't auto-format here by default
   "^/venv/",
   "^/.venv/",
 ]
@@ -21,12 +20,13 @@ profile = "black"
 line_length = 100
 src_paths = ["victron_ble2mqtt", "override", "tests"]
 known_first_party = ["victron_ble2mqtt"]
-skip = ["swarm", "overrides", "override", ".venv", "venv"]
+skip = ["swarm", "overrides", ".venv", "venv"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py39"
-extend-exclude = ["swarm", "overrides", "override", "venv", ".venv"]
+# Runtime code lives under override/ — lint it in CI (see .github/workflows/ci.yml).
+extend-exclude = ["swarm", "overrides", "venv", ".venv"]
 
 [tool.ruff.lint]
 select = [

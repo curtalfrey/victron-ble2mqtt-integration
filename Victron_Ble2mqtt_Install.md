@@ -1,5 +1,8 @@
 # Victron BLE to MQTT Integration Setup Guide
 
+> **Legacy (venv / systemd).** For current installs use **`DEPLOY.md`** (Docker + Dockge).
+> Kept for historical reference only.
+
 This guide walks through the complete setup of a Raspberry Pi 4 running Raspberry Pi OS Lite to scan Victron BLE devices (e.g., SmartShunts, MPPTs), publish the data to MQTT, and integrate with Home Assistant. No GUI required. Copy-paste friendly.
 
 ---

@@ -201,9 +201,32 @@ load_hub_image_if_needed() {
   return 0
 }
 
+# Pinned HA tag (Compose default). Override with HA_IMAGE=... in .env.
+# Official pin pattern: https://www.home-assistant.io/common-tasks/container/
+HA_IMAGE="${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.7.3}"
+export HA_IMAGE
+HA_IMAGE_STABLE_ALIAS="ghcr.io/home-assistant/home-assistant:stable"
+
+ensure_ha_image() {
+  if docker image inspect "$HA_IMAGE" >/dev/null 2>&1; then
+    return 0
+  fi
+  load_hub_image_if_needed "$HA_IMAGE" \
+    "home-assistant-2026.7.3.tar.gz" "Home Assistant"
+  if docker image inspect "$HA_IMAGE" >/dev/null 2>&1; then
+    return 0
+  fi
+  # Legacy hub filename loads as :stable — retag so Compose pin resolves.
+  load_hub_image_if_needed "$HA_IMAGE_STABLE_ALIAS" \
+    "home-assistant-stable.tar.gz" "Home Assistant (legacy tarball name)"
+  if docker image inspect "$HA_IMAGE_STABLE_ALIAS" >/dev/null 2>&1; then
+    echo "[deploy] Retagging ${HA_IMAGE_STABLE_ALIAS} -> ${HA_IMAGE} for Compose pin"
+    docker tag "$HA_IMAGE_STABLE_ALIAS" "$HA_IMAGE" || true
+  fi
+}
+
 load_all_hub_images() {
-  load_hub_image_if_needed "ghcr.io/home-assistant/home-assistant:stable" \
-    "home-assistant-stable.tar.gz" "Home Assistant"
+  ensure_ha_image
   load_hub_image_if_needed "louislam/dockge:1" \
     "dockge-1.tar.gz" "Dockge"
   load_hub_image_if_needed "containrrr/watchtower:1.7.1" \
@@ -804,9 +827,8 @@ fi
 
 export TZ="${HA_TZ}"
 ensure_ha_discovery_env_for_compose
-load_hub_image_if_needed "ghcr.io/home-assistant/home-assistant:stable" \
-    "home-assistant-stable.tar.gz" "Home Assistant"
-echo "[deploy] Starting Home Assistant via Compose ..."
+ensure_ha_image
+echo "[deploy] Starting Home Assistant via Compose (image=${HA_IMAGE}) ..."
 if [[ "${ENABLE_DOCKGE}" == "1" ]]; then
   (cd /opt/stacks/homeassistant && docker compose up -d)
 else

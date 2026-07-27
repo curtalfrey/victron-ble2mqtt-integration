@@ -35,7 +35,9 @@ for c in victron_ble2mqtt homeassistant mosquitto; do docker rm -f "$c" >/dev/nu
 
 # 5) Remove common images (best-effort)
 echo "[reset] Removing images ..."
-docker rmi -f victron_ble2mqtt:local ghcr.io/home-assistant/home-assistant:stable >/dev/null 2>&1 || true
+docker rmi -f victron_ble2mqtt:local \
+  ghcr.io/home-assistant/home-assistant:2026.7.3 \
+  ghcr.io/home-assistant/home-assistant:stable >/dev/null 2>&1 || true
 
 # 6) Remove Mosquitto packages/configs (system install)
 echo "[reset] Purging Mosquitto packages ..."

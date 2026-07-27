@@ -1,36 +1,17 @@
+# Deprecated soft-fail Black/Flake8/Mypy gate removed 2026-07.
+# Canonical Python quality gate: .github/workflows/ci.yml (ruff + pytest on
+# override/victron_ble2mqtt and victron_ble2mqtt).
 name: CI — lint & types
 
 on:
-  push:
-    branches: [ main, '**' ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  lint:
-    name: Black + Flake8 + Mypy
+  skipped:
+    name: Use ci.yml instead
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install dev dependencies
+      - name: Point maintainers at ci.yml
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.lock
-          pip install black==23.9.1 flake8 mypy
-
-      - name: Run black check
-        run: |
-          black --version
-          black --check .
-
-      - name: Run flake8
-        run: flake8 . --exit-zero
-
-      - name: Run mypy
-        run: mypy . || true
+          echo "This workflow is retired. See .github/workflows/ci.yml"
+          exit 0

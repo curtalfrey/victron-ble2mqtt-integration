@@ -1,5 +1,6 @@
 import logging
 import socket
+import time
 
 from bleak import BLEDevice
 from ha_services.mqtt4homeassistant.components.sensor import Sensor
@@ -10,7 +11,6 @@ from victron_ble.devices import BatteryMonitor, Device, SolarCharger
 import victron_ble2mqtt
 from victron_ble2mqtt.user_settings import UserSettings
 from victron_ble2mqtt.victron_ble_utils import GenericDevice
-
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class BaseHandler:
         try:
             if sensor is None:
                 return value
-            prec = getattr(sensor, 'suggested_display_precision', None)
+            prec = getattr(sensor, "suggested_display_precision", None)
             if isinstance(value, (int, float)) and isinstance(prec, int):
                 if prec == 0:
                     # Use int for whole numbers
@@ -57,21 +57,23 @@ class BaseHandler:
 
     def setup(self, *, data_dict):
         mac_address = self.ble_device.address
-        uid = mac_address.lower().replace(':', '')
+        uid = mac_address.lower().replace(":", "")
         # Resolve a friendly, non-empty device name for Home Assistant discovery
         name = self._resolve_device_name(default_uid=uid, data_dict=data_dict)
         self.device = MqttDevice(
             main_device=self.main_mqtt_device,
             name=name,
             uid=uid,
-            manufacturer='Victron Energy',
-            model=data_dict['model_name'],  # e.g.: 'SmartSolar MPPT 100|20 48V' | 'SmartShunt 500A/50mV',
+            manufacturer="Victron Energy",
+            model=data_dict[
+                "model_name"
+            ],  # e.g.: 'SmartSolar MPPT 100|20 48V' | 'SmartShunt 500A/50mV',
         )
         self.rssi_sensor = Sensor(
             device=self.device,
-            name='RSSI',
-            uid='rssi',
-            state_class='measurement',
+            name="RSSI",
+            uid="rssi",
+            state_class="measurement",
         )
 
     def _resolve_device_name(self, *, default_uid: str, data_dict: dict) -> str:
@@ -83,42 +85,43 @@ class BaseHandler:
         4) else fall back to MAC-based uid
         """
         try:
-            mac_l = (self.ble_device.address or '').lower()
-            for entry in getattr(self.user_settings, 'devices', []) or []:
+            mac_l = (self.ble_device.address or "").lower()
+            for entry in getattr(self.user_settings, "devices", []) or []:
                 try:
-                    entry_mac = (getattr(entry, 'mac', '') or '').lower()
-                    entry_name = getattr(entry, 'name', None)
+                    entry_mac = (getattr(entry, "mac", "") or "").lower()
+                    entry_name = getattr(entry, "name", None)
                 except Exception:
-                    entry_mac = str((entry or {}).get('mac', '')).lower()
-                    entry_name = (entry or {}).get('name')
+                    entry_mac = str((entry or {}).get("mac", "")).lower()
+                    entry_name = (entry or {}).get("name")
                 if entry_mac and entry_mac == mac_l and entry_name:
                     return str(entry_name)
         except Exception:
             pass
 
         # BLE device name if present
-        if getattr(self.ble_device, 'name', None):
+        if getattr(self.ble_device, "name", None):
             return str(self.ble_device.name)
 
         # Model name from parsed data
-        model_name = data_dict.get('model_name')
+        model_name = data_dict.get("model_name")
         if model_name:
             return str(model_name)
 
         # Final fallback to UID
-        return f'Victron {default_uid}'
+        return f"Victron {default_uid}"
 
     def publish(self, *, data_dict: dict, rssi: int | None) -> None:
         if self.device is None:
             self.setup(data_dict=data_dict)
         # Throttle system info polling/publishing
-        import time
         if not hasattr(self.main_mqtt_device, "_last_sys_poll"):
             self.main_mqtt_device._last_sys_poll = 0.0
         if not hasattr(self.user_settings.mqtt, "system_poll_throttle_seconds"):
             self.user_settings.mqtt.system_poll_throttle_seconds = 3
         now = time.monotonic()
-        if (now - self.main_mqtt_device._last_sys_poll) >= float(self.user_settings.mqtt.system_poll_throttle_seconds or 3):
+        if (now - self.main_mqtt_device._last_sys_poll) >= float(
+            self.user_settings.mqtt.system_poll_throttle_seconds or 3
+        ):
             self.main_mqtt_device._last_sys_poll = now
             self.main_mqtt_device.poll_and_publish(self.mqtt_client)
 
@@ -126,14 +129,14 @@ class BaseHandler:
         self.rssi_sensor.publish(self.mqtt_client)
 
         for key, value in data_dict.items():
-            if key == 'model_name':
+            if key == "model_name":
                 continue
 
             if sensor := self.sensors.get(key):
                 sensor.set_state(self._apply_precision(sensor, value))
                 sensor.publish(self.mqtt_client)
             else:
-                pass # logger.warning(f'No sensor for key: {key}')
+                pass  # logger.warning(f'No sensor for key: {key}')
 
 
 def calc_midpoint_shift(voltage: float, midpoint_voltage: float) -> float:
@@ -210,60 +213,60 @@ class BatteryMonitorHandler(BaseHandler):
         super().setup(data_dict=data_dict)
 
         self.sensors = {
-            'aux_mode': Sensor(
+            "aux_mode": Sensor(
                 device=self.device,
-                name='Auxiliary Mode',
-                uid='aux_mode',
+                name="Auxiliary Mode",
+                uid="aux_mode",
             ),
-            'consumed_ah': Sensor(
+            "consumed_ah": Sensor(
                 device=self.device,
-                name='Consumed Ah',
-                uid='consumed_ah',
-                state_class='total_increasing',
-                unit_of_measurement='Ah',
+                name="Consumed Ah",
+                uid="consumed_ah",
+                state_class="total_increasing",
+                unit_of_measurement="Ah",
                 suggested_display_precision=1,
             ),
-            'current': Sensor(
+            "current": Sensor(
                 device=self.device,
-                name='Current',
-                uid='current',
-                device_class='current',
-                state_class='measurement',
-                unit_of_measurement='A',
+                name="Current",
+                uid="current",
+                device_class="current",
+                state_class="measurement",
+                unit_of_measurement="A",
                 suggested_display_precision=3,
             ),
-            'midpoint_voltage': Sensor(
+            "midpoint_voltage": Sensor(
                 device=self.device,
-                name='Midpoint Voltage',
-                uid='midpoint_voltage',
-                device_class='voltage',
-                state_class='measurement',
-                unit_of_measurement='V',
+                name="Midpoint Voltage",
+                uid="midpoint_voltage",
+                device_class="voltage",
+                state_class="measurement",
+                unit_of_measurement="V",
                 suggested_display_precision=2,
             ),
-            'remaining_mins': Sensor(
+            "remaining_mins": Sensor(
                 device=self.device,
-                name='Remaining Minutes',
-                uid='remaining_mins',
-                state_class='measurement',
-                unit_of_measurement='min',
+                name="Remaining Minutes",
+                uid="remaining_mins",
+                state_class="measurement",
+                unit_of_measurement="min",
             ),
-            'soc': Sensor(
+            "soc": Sensor(
                 device=self.device,
-                name='State of Charge',
-                uid='soc',
-                device_class='battery',
-                state_class='measurement',
-                unit_of_measurement='%',
+                name="State of Charge",
+                uid="soc",
+                device_class="battery",
+                state_class="measurement",
+                unit_of_measurement="%",
                 suggested_display_precision=1,
             ),
-            'voltage': Sensor(
+            "voltage": Sensor(
                 device=self.device,
-                name='Voltage',
-                uid='voltage',
-                device_class='voltage',
-                state_class='measurement',
-                unit_of_measurement='V',
+                name="Voltage",
+                uid="voltage",
+                device_class="voltage",
+                state_class="measurement",
+                unit_of_measurement="V",
                 suggested_display_precision=2,
             ),
         }
@@ -272,59 +275,59 @@ class BatteryMonitorHandler(BaseHandler):
 
         self.power_sensor = Sensor(
             device=self.device,
-            name='Power',
-            uid='power',
-            device_class='power',
-            state_class='measurement',
-            unit_of_measurement='W',
+            name="Power",
+            uid="power",
+            device_class="power",
+            state_class="measurement",
+            unit_of_measurement="W",
             suggested_display_precision=2,
         )
 
-        if data_dict.get('aux_mode', None) == 'midpoint_voltage':
+        if data_dict.get("aux_mode", None) == "midpoint_voltage":
             self.midpoint_shift = Sensor(
                 device=self.device,
-                name='Midpoint Shift',
-                uid='midpoint_shift',
-                device_class='voltage',
-                state_class='measurement',
-                unit_of_measurement='V',
+                name="Midpoint Shift",
+                uid="midpoint_shift",
+                device_class="voltage",
+                state_class="measurement",
+                unit_of_measurement="V",
                 suggested_display_precision=2,
             )
             self.midpoint_shift_percent = Sensor(
                 device=self.device,
-                name='Midpoint Shift',
-                uid='midpoint_shift_percent',
-                state_class='measurement',
-                unit_of_measurement='%',
+                name="Midpoint Shift",
+                uid="midpoint_shift_percent",
+                state_class="measurement",
+                unit_of_measurement="%",
                 suggested_display_precision=2,
             )
 
         # Apply optional per-device precision overrides from user settings
         try:
-            mac_l = (self.ble_device.address or '').lower()
+            mac_l = (self.ble_device.address or "").lower()
             entry = None
-            for e in getattr(self.user_settings, 'devices', []) or []:
-                if getattr(e, 'mac', '').lower() == mac_l:
+            for e in getattr(self.user_settings, "devices", []) or []:
+                if getattr(e, "mac", "").lower() == mac_l:
                     entry = e
                     break
-            overrides = getattr(entry, 'precision', None) if entry else None
+            overrides = getattr(entry, "precision", None) if entry else None
             if isinstance(overrides, dict):
                 # Map of our internal sensor keys to Sensor objects we created above
                 key_to_sensor = {
-                    'aux_mode': self.sensors.get('aux_mode'),
-                    'consumed_ah': self.sensors.get('consumed_ah'),
-                    'current': self.sensors.get('current'),
-                    'midpoint_voltage': self.sensors.get('midpoint_voltage'),
-                    'remaining_mins': self.sensors.get('remaining_mins'),
-                    'soc': self.sensors.get('soc'),
-                    'voltage': self.sensors.get('voltage'),
-                    'power': self.power_sensor,
+                    "aux_mode": self.sensors.get("aux_mode"),
+                    "consumed_ah": self.sensors.get("consumed_ah"),
+                    "current": self.sensors.get("current"),
+                    "midpoint_voltage": self.sensors.get("midpoint_voltage"),
+                    "remaining_mins": self.sensors.get("remaining_mins"),
+                    "soc": self.sensors.get("soc"),
+                    "voltage": self.sensors.get("voltage"),
+                    "power": self.power_sensor,
                 }
                 # Include optional midpoint sensors if present
                 if self.midpoint_shift:
-                    key_to_sensor['midpoint_shift'] = self.midpoint_shift
+                    key_to_sensor["midpoint_shift"] = self.midpoint_shift
                 if self.midpoint_shift_percent:
-                    key_to_sensor['midpoint_shift_percent'] = self.midpoint_shift_percent
+                    key_to_sensor["midpoint_shift_percent"] = self.midpoint_shift_percent
                 for k, v in overrides.items():
                     try:
                         s = key_to_sensor.get(k)
@@ -342,52 +345,68 @@ class BatteryMonitorHandler(BaseHandler):
         # Extra sensors
 
         self.power_sensor.set_state(
-            self._apply_precision(self.power_sensor, data_dict['voltage'] * data_dict['current'])
+            self._apply_precision(self.power_sensor, data_dict["voltage"] * data_dict["current"])
         )
         self.power_sensor.publish(self.mqtt_client)
 
-        if data_dict.get('aux_mode', None) == 'midpoint_voltage':
+        if data_dict.get("aux_mode", None) == "midpoint_voltage":
             # Lazily create midpoint sensors if aux_mode switched after first packet (__init__ sets None).
             if self.midpoint_shift is None:
                 self.midpoint_shift = Sensor(
                     device=self.device,
-                    name='Midpoint Shift',
-                    uid='midpoint_shift',
-                    device_class='voltage',
-                    state_class='measurement',
-                    unit_of_measurement='V',
+                    name="Midpoint Shift",
+                    uid="midpoint_shift",
+                    device_class="voltage",
+                    state_class="measurement",
+                    unit_of_measurement="V",
                     suggested_display_precision=2,
                 )
                 self.midpoint_shift_percent = Sensor(
                     device=self.device,
-                    name='Midpoint Shift',
-                    uid='midpoint_shift_percent',
-                    state_class='measurement',
-                    unit_of_measurement='%',
+                    name="Midpoint Shift",
+                    uid="midpoint_shift_percent",
+                    state_class="measurement",
+                    unit_of_measurement="%",
                     suggested_display_precision=2,
                 )
                 # Apply precision overrides if configured for this device
                 try:
-                    mac_l = (self.ble_device.address or '').lower()
+                    mac_l = (self.ble_device.address or "").lower()
                     entry = None
-                    for e in getattr(self.user_settings, 'devices', []) or []:
-                        if getattr(e, 'mac', '').lower() == mac_l:
+                    for e in getattr(self.user_settings, "devices", []) or []:
+                        if getattr(e, "mac", "").lower() == mac_l:
                             entry = e
                             break
-                    overrides = getattr(entry, 'precision', None) if entry else None
+                    overrides = getattr(entry, "precision", None) if entry else None
                     if isinstance(overrides, dict):
-                        if 'midpoint_shift' in overrides and isinstance(overrides['midpoint_shift'], int):
-                            self.midpoint_shift.suggested_display_precision = overrides['midpoint_shift']
-                        if 'midpoint_shift_percent' in overrides and isinstance(overrides['midpoint_shift_percent'], int):
-                            self.midpoint_shift_percent.suggested_display_precision = overrides['midpoint_shift_percent']
+                        if "midpoint_shift" in overrides and isinstance(
+                            overrides["midpoint_shift"], int
+                        ):
+                            self.midpoint_shift.suggested_display_precision = overrides[
+                                "midpoint_shift"
+                            ]
+                        if "midpoint_shift_percent" in overrides and isinstance(
+                            overrides["midpoint_shift_percent"], int
+                        ):
+                            self.midpoint_shift_percent.suggested_display_precision = overrides[
+                                "midpoint_shift_percent"
+                            ]
                 except Exception:
                     pass
-            midpoint_shift = calc_midpoint_shift(data_dict['voltage'], data_dict['midpoint_voltage'])
-            self.midpoint_shift.set_state(self._apply_precision(self.midpoint_shift, midpoint_shift))
+            midpoint_shift = calc_midpoint_shift(
+                data_dict["voltage"], data_dict["midpoint_voltage"]
+            )
+            self.midpoint_shift.set_state(
+                self._apply_precision(self.midpoint_shift, midpoint_shift)
+            )
             self.midpoint_shift.publish(self.mqtt_client)
 
-            midpoint_shift_percent = calc_midpoint_shift_percent(data_dict['voltage'], data_dict['midpoint_voltage'])
-            self.midpoint_shift_percent.set_state(self._apply_precision(self.midpoint_shift_percent, midpoint_shift_percent))
+            midpoint_shift_percent = calc_midpoint_shift_percent(
+                data_dict["voltage"], data_dict["midpoint_voltage"]
+            )
+            self.midpoint_shift_percent.set_state(
+                self._apply_precision(self.midpoint_shift_percent, midpoint_shift_percent)
+            )
             self.midpoint_shift_percent.publish(self.mqtt_client)
 
 
@@ -408,54 +427,54 @@ class SolarChargerHandler(BaseHandler):
         super().setup(data_dict=data_dict)
 
         self.sensors = {
-            'battery_charging_current': Sensor(
+            "battery_charging_current": Sensor(
                 device=self.device,
-                name='Battery Charging',
-                uid='battery_charging_current',
-                device_class='current',
-                state_class='measurement',
-                unit_of_measurement='A',
+                name="Battery Charging",
+                uid="battery_charging_current",
+                device_class="current",
+                state_class="measurement",
+                unit_of_measurement="A",
                 suggested_display_precision=1,
             ),
-            'battery_voltage': Sensor(
+            "battery_voltage": Sensor(
                 device=self.device,
-                name='Battery',
-                uid='battery_voltage',
-                device_class='voltage',
-                state_class='measurement',
-                unit_of_measurement='V',
+                name="Battery",
+                uid="battery_voltage",
+                device_class="voltage",
+                state_class="measurement",
+                unit_of_measurement="V",
                 suggested_display_precision=2,
             ),
-            'charge_state': Sensor(
+            "charge_state": Sensor(
                 device=self.device,
-                uid='charge_state',
-                name='Charge State',
+                uid="charge_state",
+                name="Charge State",
             ),
-            'external_device_load': Sensor(
+            "external_device_load": Sensor(
                 device=self.device,
-                name='Load',
-                uid='load',
-                device_class='current',
-                state_class='measurement',
-                unit_of_measurement='A',
+                name="Load",
+                uid="load",
+                device_class="current",
+                state_class="measurement",
+                unit_of_measurement="A",
                 suggested_display_precision=1,
             ),
-            'solar_power': Sensor(
+            "solar_power": Sensor(
                 device=self.device,
-                name='Solar',
-                uid='solar_power',
-                device_class='power',
-                state_class='measurement',
-                unit_of_measurement='W',
+                name="Solar",
+                uid="solar_power",
+                device_class="power",
+                state_class="measurement",
+                unit_of_measurement="W",
                 suggested_display_precision=0,
             ),
-            'yield_today': Sensor(
+            "yield_today": Sensor(
                 device=self.device,
-                name='Yield Today',
-                uid='yield_today',
-                device_class='energy',
-                state_class='total_increasing',
-                unit_of_measurement='Wh',
+                name="Yield Today",
+                uid="yield_today",
+                device_class="energy",
+                state_class="total_increasing",
+                unit_of_measurement="Wh",
                 suggested_display_precision=0,
             ),
         }
@@ -464,20 +483,20 @@ class SolarChargerHandler(BaseHandler):
 
         self.charging_power = Sensor(
             device=self.device,
-            name='Charging Power',
-            uid='charging_power',
-            device_class='power',
-            state_class='measurement',
-            unit_of_measurement='W',
+            name="Charging Power",
+            uid="charging_power",
+            device_class="power",
+            state_class="measurement",
+            unit_of_measurement="W",
             suggested_display_precision=1,
         )
         self.load_power = Sensor(
             device=self.device,
-            name='Load Power',
-            uid='load_power',
-            device_class='power',
-            state_class='measurement',
-            unit_of_measurement='W',
+            name="Load Power",
+            uid="load_power",
+            device_class="power",
+            state_class="measurement",
+            unit_of_measurement="W",
             suggested_display_precision=1,
         )
 
@@ -489,7 +508,7 @@ class SolarChargerHandler(BaseHandler):
         self.charging_power.set_state(
             self._apply_precision(
                 self.charging_power,
-                data_dict['battery_voltage'] * data_dict['battery_charging_current'],
+                data_dict["battery_voltage"] * data_dict["battery_charging_current"],
             )
         )
         self.charging_power.publish(self.mqtt_client)
@@ -497,7 +516,7 @@ class SolarChargerHandler(BaseHandler):
         self.load_power.set_state(
             self._apply_precision(
                 self.load_power,
-                data_dict['battery_voltage'] * data_dict['external_device_load'],
+                data_dict["battery_voltage"] * data_dict["external_device_load"],
             )
         )
         self.load_power.publish(self.mqtt_client)
@@ -510,10 +529,10 @@ class FallbackHandler(BaseHandler):
         super().setup(data_dict=data_dict)
 
         for key in data_dict.keys():
-            if key == 'model_name':
+            if key == "model_name":
                 continue
 
-            logger.warning('Setup fallback sensor for: %s', key)
+            logger.warning("Setup fallback sensor for: %s", key)
 
             self.sensors[key] = Sensor(
                 device=self.device,
@@ -531,10 +550,10 @@ VICRON_DEVICE_HANDLERS = (
 def get_handler(*, victron_device: Device) -> type[BaseHandler]:
     for HandlerClass in VICRON_DEVICE_HANDLERS:
         if isinstance(victron_device, HandlerClass.VictronDeviceClass):
-            logger.info('Handler for %s: %s', victron_device, HandlerClass.__name__)
+            logger.info("Handler for %s: %s", victron_device, HandlerClass.__name__)
             return HandlerClass
 
-    logger.warning('Use fallback handler for %s', victron_device)
+    logger.warning("Use fallback handler for %s", victron_device)
     return FallbackHandler
 
 
@@ -542,9 +561,9 @@ class VictronMqttDeviceHandler:
     def __init__(self, *, user_settings: UserSettings):
         self.user_settings = user_settings
         self.main_mqtt_device = MainMqttDevice(
-            name=f'victron-ble2mqtt@{socket.gethostname()}',
+            name=f"victron-ble2mqtt@{socket.gethostname()}",
             uid=user_settings.mqtt.main_uid,
-            manufacturer='victron-ble2mqtt',
+            manufacturer="victron-ble2mqtt",
             sw_version=victron_ble2mqtt.__version__,
             config_throttle_sec=user_settings.mqtt.publish_config_throttle_seconds,
         )
@@ -559,7 +578,7 @@ class VictronMqttDeviceHandler:
         rssi: int | None,
         mqtt_client: Client,
     ) -> None:
-        logger.debug('MQTT data from %s', ble_device.name)
+        logger.debug("MQTT data from %s", ble_device.name)
 
         mac_address = ble_device.address
         try:

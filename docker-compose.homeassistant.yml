@@ -1,11 +1,16 @@
 ## Docker Compose v2 format (no top-level 'version' field)
+## Pin HA to a monthly release tag (not :stable). Bump deliberately after reading
+## https://www.home-assistant.io/common-tasks/container/ ("Running a specific version").
+## Override: HA_IMAGE=ghcr.io/home-assistant/home-assistant:YYYY.M.P in .env
 services:
   homeassistant:
-    image: ghcr.io/home-assistant/home-assistant:stable
+    image: ${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.7.3}
     container_name: homeassistant
     restart: unless-stopped
     labels:
       autoheal: "true"
+      # Watchtower is label-gated (WATCHTOWER_LABEL_ENABLE=true). Do not add
+      # com.centurylinklabs.watchtower.enable=true here until HA upgrades are intentional.
     # Allow HA to see services running on the host (mosquitto at localhost)
     network_mode: host
     cap_add:

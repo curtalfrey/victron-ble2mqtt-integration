@@ -22,15 +22,18 @@ Steps (copy/paste):
 
 ### Fresh Raspberry Pi OS (optional one-shot)
 
-As a **non-root** user with `sudo` (updates OS, installs `git`, clones or pulls this repo, seeds optional `swarm/*.env`, then runs deploy):
+Bootstrap helper lives in the **alfa-ai** sibling repo (not this tree):
 
 ```bash
-bash scripts/bootstrap_pi4_victron_ble2mqtt_integration.sh
+# From a machine that has alfa-ai checked out (or copy the script onto the Pi):
+bash /path/to/alfa-ai/scripts/bootstrap_pi4_victron_ble2mqtt_integration.sh
 ```
 
-1) Clone the repo and create `.env` for MQTT (and optional Wi‑Fi / tools)
+Or clone this repo and run deploy directly (below).
 
-   git clone https://github.com/curtalfrey/victron-ble2mqtt-integration.git
+1) Clone the repo and create `.env` for MQTT (and optional Wi-Fi / tools)
+
+   git clone https://github.com/Curt-Alfrey-s-Org/victron-ble2mqtt-integration.git
    cd victron-ble2mqtt-integration
    cp -n dotenv.sample .env && chmod 600 .env   # then edit: MQTT_USER, MQTT_PASSWORD
    # ADVKEY_* may live in .env **or** ./victron-secrets.env — if both set the same
@@ -49,12 +52,13 @@ bash scripts/bootstrap_pi4_victron_ble2mqtt_integration.sh
    # ENABLE_TOOLS=1           # deploy Watchtower stack (docker-compose.tools.yml, default on)
    # ENABLE_AUTOHEAL=0        # skip docker-compose.autoheal.yml (default 1 — recommended)
    # ENABLE_HA_WATCHDOG=1     # legacy systemd HTTP probe + docker restart (default 0)
-   # ENABLE_FAILOVER_MONITOR=1# enable Wi‑Fi failover monitor@user service
+   # ENABLE_FAILOVER_MONITOR=1# enable Wi-Fi failover monitor@user service
    # ENABLE_DOCKER_REGISTRY_MIRROR=0 # skip LAN registry mirror (default 1)
    # DOCKER_REGISTRY_MIRROR=http://192.168.0.111:5000  # override mirror URL
    # ENABLE_HOME_ASSISTANT=0       # skip Home Assistant compose (no GHCR) until hub tarball exists
    # TRUENAS_IP=192.168.0.111   # TrueNAS address for ping + mount-truenas-hub.sh
-   # HA_IMAGE_TARBALL=/path/to/home-assistant-stable.tar.gz  # optional explicit tarball for docker load
+   # HA_IMAGE=ghcr.io/home-assistant/home-assistant:2026.7.3  # Compose pin (default)
+   # HA_IMAGE_TARBALL=/path/to/home-assistant-2026.7.3.tar.gz  # optional explicit docker load
 
    docker ps --filter name=victron_ble2mqtt
    docker logs -f victron_ble2mqtt
@@ -79,7 +83,11 @@ Notes:
 
 **Verify autoheal (on the Pi):** `docker inspect homeassistant --format '{{json .State.Health}}'` — after intentional stall, container should return **`healthy`** following an **`autoheal`** restart (`docker logs autoheal`).
 
-**TrueNAS hub (same LAN as Alfa):** **`deploy.sh`** tries **`scripts/mount-truenas-hub.sh`** when **`ENSURE_TRUENAS_NFS_MOUNT=1`** (default) and TrueNAS **`TRUENAS_IP`** (default **`192.168.0.111`**) pings but **`wheels/victron`** is empty locally — same NFS layout as **`alfa-ai/scripts/mount_nfs_models.sh`**. Seed wheels on `.111` with **`alfa-ai/scripts/seed-victron-wheels-truenas.sh`** so **`sync-victron-wheels-from-hub`** can fill **`./wheels`** and set **`PIP_OFFLINE=1`**. Seed the HA image tarball (**`publish-built-image-to-hub.sh`** → **`home-assistant-stable.tar.gz`**) or Compose will pull **GHCR** (~1.5 GB). Disable auto-mount with **`ENSURE_TRUENAS_NFS_MOUNT=0`** if the Pi is off‑LAN.
+**TrueNAS hub (same LAN as Alfa):** **`deploy.sh`** tries **`scripts/mount-truenas-hub.sh`** when **`ENSURE_TRUENAS_NFS_MOUNT=1`** (default) and TrueNAS **`TRUENAS_IP`** (default **`192.168.0.111`**) pings but **`wheels/victron`** is empty locally — same NFS layout as **`alfa-ai/scripts/mount_nfs_models.sh`**. Seed wheels on `.111` with **`alfa-ai/scripts/seed-victron-wheels-truenas.sh`** so **`sync-victron-wheels-from-hub`** can fill **`./wheels`** and set **`PIP_OFFLINE=1`**. Seed the HA image: on `.111` `docker pull ghcr.io/home-assistant/home-assistant:2026.7.3` then **`publish-built-image-to-hub.sh`** → **`home-assistant-2026.7.3.tar.gz`** (legacy **`home-assistant-stable.tar.gz`** still loads and is retagged). Otherwise Compose may pull **GHCR** (~1.5 GB). Disable auto-mount with **`ENSURE_TRUENAS_NFS_MOUNT=0`** if the Pi is off-LAN.
+
+**Home Assistant pin:** `docker-compose.homeassistant.yml` uses a monthly tag (default **`2026.7.3`**), not `:stable`. Watchtower is label-gated and does **not** auto-upgrade HA. Bump `HA_IMAGE` deliberately after reading [HA container release notes](https://www.home-assistant.io/common-tasks/container/).
+
+**Legacy guides:** `Victron_BLE_to_MQTT_Integration_Setup_Guide.md` / `Victron_Ble2mqtt_Install.md` describe the old venv/systemd path — prefer this file + Docker Compose for new installs.
 - Docker won’t start after running the installer: check `/etc/docker/daemon.json`. The installer backs up invalid files and writes valid JSON, then restarts Docker.
 - **`victron_ble2mqtt` exits / BLE issues:** verify `bluetoothctl show` reports `Powered: yes`; run **`sudo bash scripts/deploy.sh`** or **`docker restart victron_ble2mqtt`**. Legacy **`victron-ble2mqtt.service`** is removed by deploy — do not re-enable it.
 - No HA entities after discovery: ensure the Victron app is closed (it can stop adverts), and verify ADVKEY_* values are correct.

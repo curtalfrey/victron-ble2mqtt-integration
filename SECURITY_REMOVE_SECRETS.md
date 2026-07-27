@@ -1,34 +1,49 @@
-This repository contains sensitive files that should not be committed to git.
+# Remove secrets from git (operator checklist)
 
-Follow these steps to remove secrets from the working tree safely and stop tracking them:
+This repository must not track credentials, API tokens, or TLS private keys.
 
-1) Rotate credentials immediately for any secrets that were exposed (MQTT passwords, API tokens, GHCR tokens, etc.).
+## Immediate actions if secrets were committed
 
-2) Add secrets to a secure store (GitHub Secrets, HashiCorp Vault, Docker secrets) and do not keep them in the repo.
+1. **Rotate** every credential that may have been exposed (MQTT passwords, HA long-lived tokens, GHCR tokens, TLS keys used by reverse proxies, ADVKEY material if ever committed).
+2. Store replacements outside git (host `.env` / `victron-secrets.env` with mode `600`, or a secrets manager). Prefer `victron-secrets.env` for ADVKEY_* only.
+3. Confirm `.gitignore` covers local secret paths (see repo root `.gitignore`: `.env`, `*.env`, `ssl/*.key`, `ssl/*.crt`, swarm env files).
+4. **Stop tracking** any file that slipped in:
 
-3) Update `.gitignore` so the sensitive files are not tracked (the repo includes a change to `.gitignore`).
+   ```bash
+   git rm --cached --ignore-unmatch .env victron-secrets.env ha-discovery.env health.env ssl/tools.key ssl/tools.crt
+   git commit -m "chore: stop tracking local secrets and TLS keys"
+   ```
 
-4) Stop tracking the files with git (this un-stages them but keeps the files locally):
+5. **Purge history** if the secret was pushed (required for private keys and passwords):
 
-   git rm --cached .env victron-secrets.env ha-discovery.env health.env user_settings.py || true
-   git commit -m "chore: stop tracking local env/secret files"
+   - Preferred: [git-filter-repo](https://github.com/newren/git-filter-repo)
 
-5) Purge secrets from git history (optional, required if you pushed secrets to a remote):
-
-   - Recommended: use `git filter-repo` (fast and maintained)
-     * Install: `pip install git-filter-repo`
-     * Run (from a fresh clone):
-
-       git clone --mirror <repo-url> repo.git
-       cd repo.git
-       git filter-repo --invert-paths --paths .env --paths victron-secrets.env --paths ha-discovery.env --paths health.env --paths user_settings.py
-       git push --force --all
-       git push --force --tags
+     ```bash
+     git clone --mirror <repo-url> repo.git
+     cd repo.git
+     git filter-repo --invert-paths \
+       --paths .env \
+       --paths victron-secrets.env \
+       --paths ha-discovery.env \
+       --paths health.env \
+       --paths user_settings.py \
+       --paths ssl/tools.key \
+       --paths ssl/tools.crt
+     git push --force --all
+     git push --force --tags
+     ```
 
    - Alternative: BFG Repo-Cleaner
 
-6) After purging, inform any providers and rotate secrets again because they may have been leaked.
+6. After a history rewrite, **rotate again** (assume prior values leaked).
+7. Keep pre-commit / secret scanning enabled so this does not recur.
 
-7) Add secret-scanning and pre-commit hooks to avoid accidental commits in the future.
+## 2026-07 cleanup note
 
-If you'd like I can run the untracking git commands and prepare a branch/PR that removes tracked secrets; tell me to proceed and which files to untrack if you want a narrower set.
+`ssl/tools.key` and `ssl/tools.crt` were removed from the working tree and from the git index. They remain in **older commits** until history is purged (step 5). Treat that keypair as compromised: generate a new cert on the host (see `ssl/README.md`) and do not re-add keys to the repo.
+
+## Related
+
+- `DEPLOY.md` — `.env` / `victron-secrets.env` layout
+- `ssl/README.md` — local TLS generation
+- `docs/ENGINEERING_STANDARDS_PLAN.md` — Phase 5 threat model
