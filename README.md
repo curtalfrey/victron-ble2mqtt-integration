@@ -1,19 +1,33 @@
-# Home energy on a Raspberry Pi
+# victron-ble2mqtt-integration
 
-This project turns a **Raspberry Pi** into a small home-energy box.
+## What it is
 
-It reads your gear (Victron over Bluetooth, optional Sungold inverter over USB), sends the numbers to **MQTT** (a local message bus), and shows them in **Home Assistant** (the dashboard you open in a browser or on your phone).
+A **Raspberry Pi home-energy stack**. It listens to your solar / battery gear, sends the numbers to a local MQTT broker (Mosquitto), and shows them in **Home Assistant** — the dashboard you open in a browser or on your phone (`http://YOUR-PI-IP:8123`).
 
-You do **not** need to know GitHub. The steps below are copy-and-paste on the Pi.
+It is meant to run **on your LAN**, not in the cloud. You do not need to know GitHub to use it; the install steps below are copy-and-paste on the Pi.
 
-| You have | This repo does |
-|----------|----------------|
-| Victron SmartShunt / MPPT (Bluetooth) | Reads BLE ads → Home Assistant |
-| Sungold SPH302480A (USB cable) | Read-only Modbus → Home Assistant (off until you turn it on) |
-| Refoss / other Wi‑Fi meters | Add those **inside Home Assistant**, not here |
-| Raspberry Pi itself | CPU, temperature, Wi‑Fi, uptime sensors |
+One installer (`scripts/deploy.sh`) sets up Docker, Mosquitto, Home Assistant, and the Victron Bluetooth reader. Optional pieces (Sungold inverter, extra meters) turn on when you are ready.
 
-**Add or remove gear:** [docs/DEVICES.md](docs/DEVICES.md) — one page, on/off switches.
+## What it can do and what it’s for
+
+**What it’s for:** see live battery, solar, and (optionally) inverter data at home without sitting in VictronConnect or a vendor cloud app. Useful if you already have Victron Bluetooth devices and want them next to lights, thermostats, and other Home Assistant stuff.
+
+**What it can do**
+
+| Gear | What this repo does |
+|------|---------------------|
+| Victron SmartShunt / MPPT (Bluetooth) | Reads BLE advertisements and creates Home Assistant sensors (voltage, current, SOC, solar power, charge state, …) |
+| Sungold SPH302480A (USB cable) | Optional **read-only** Modbus sidecar — PV, battery, grid, load. Off until you plug USB and set `ENABLE_SUNGOLD=1` |
+| The Raspberry Pi itself | CPU, temperature, Wi‑Fi, uptime — so you can see if the box is healthy |
+| Refoss / Govee / other Wi‑Fi devices | **Not** installed here. Add those inside Home Assistant → Settings → Devices & services |
+
+**What it does *not* do**
+
+- It does **not** change inverter or charger settings (Sungold is sensors only; use the front panel).
+- It does **not** replace VictronConnect for pairing or advertisement keys.
+- It does **not** require a GPU cluster, Tailscale, or any other repo to get a basic dashboard.
+
+**Add or remove gear:** [docs/DEVICES.md](docs/DEVICES.md) — one page of on/off switches.
 
 ---
 
