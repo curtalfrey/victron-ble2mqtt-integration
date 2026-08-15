@@ -20,12 +20,13 @@ One installer (`scripts/deploy.sh`) sets up Docker, Mosquitto, Home Assistant, a
 | Sungold SPH302480A (USB cable) | Optional **read-only** Modbus sidecar — PV, battery, grid, load. Off until you plug USB and set `ENABLE_SUNGOLD=1` |
 | The Raspberry Pi itself | CPU, temperature, Wi‑Fi, uptime — so you can see if the box is healthy |
 | Refoss / Govee / other Wi‑Fi devices | **Not** installed here. Add those inside Home Assistant → Settings → Devices & services |
+| Phone / laptop away from home | Optional **Tailscale** VPN — same Home Assistant, no router port-forward. [docs/TAILSCALE.md](docs/TAILSCALE.md) |
 
 **What it does *not* do**
 
 - It does **not** change inverter or charger settings (Sungold is sensors only; use the front panel).
 - It does **not** replace VictronConnect for pairing or advertisement keys.
-- It does **not** require a GPU cluster, Tailscale, or any other repo to get a basic dashboard.
+- It does **not** require a GPU cluster or any other repo to get a basic dashboard. **Tailscale** is optional and only for viewing that dashboard when you are not on home Wi‑Fi.
 
 **Add or remove gear:** [docs/DEVICES.md](docs/DEVICES.md) — one page of on/off switches.
 
@@ -131,6 +132,10 @@ Create your Home Assistant account on first visit. MQTT is wired automatically b
 
 **Dockge** (optional container UI): `http://YOUR-PI-IP:5006`
 
+### 6. Away from home (optional)
+
+To review the same numbers on cellular or another network, install **Tailscale** on the Pi and on your phone. Do not open Home Assistant to the public internet. Step-by-step (no personal IPs or names): **[docs/TAILSCALE.md](docs/TAILSCALE.md)**.
+
 ---
 
 ## After install — turn devices on or off
@@ -184,6 +189,7 @@ Close the Victron phone app if sensors stay empty.
 | **BLE** | Bluetooth Low Energy (Victron ads) |
 | **Modbus** | Wired USB talk to the Sungold inverter (read-only here) |
 | **ADVKEY** | Secret that unlocks a Victron Bluetooth advertisement |
+| **Tailscale** | Optional private VPN so you can open `:8123` away from home |
 
 ---
 
@@ -192,6 +198,7 @@ Close the Victron phone app if sensors stay empty.
 | Doc | Who it is for |
 |-----|----------------|
 | [docs/DEVICES.md](docs/DEVICES.md) | Add / remove Victron, Sungold, HA-only devices |
+| [docs/TAILSCALE.md](docs/TAILSCALE.md) | Optional: view Home Assistant away from home |
 | [docs/SUNGOLD_SPH302480A.md](docs/SUNGOLD_SPH302480A.md) | Sungold USB, udev, smoke test |
 | [DEPLOY.md](DEPLOY.md) | Installer flags, Dockge, troubleshooting |
 | [docs/ALFA_CLUSTER_INTEGRATION.md](docs/ALFA_CLUSTER_INTEGRATION.md) | Optional: same LAN as the Alfa / TrueNAS hub |

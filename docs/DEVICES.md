@@ -22,6 +22,7 @@ Secrets stay in `.env` and `victron-secrets.env` (never commit those files).
 | **Sungold SPH302480A** | USB Modbus (read-only) | **Off** | `ENABLE_SUNGOLD=1` + USB | `ENABLE_SUNGOLD=0` or unplug USB |
 | **Home Assistant** | Browser `:8123` | On | `ENABLE_HOME_ASSISTANT=1` (default) | `ENABLE_HOME_ASSISTANT=0` |
 | **Refoss / Govee / other HA gear** | Home Assistant integrations | Not this repo | HA → Settings → Devices & services | Remove the integration in HA |
+| **Away-from-home view** | Tailscale VPN (optional) | Off (not in deploy) | Install Tailscale on Pi + phone | Uninstall / log out of Tailscale |
 
 Victron and Sungold both publish into the **same** Mosquitto broker. They do not replace each other.
 
@@ -136,7 +137,13 @@ Add these in the Home Assistant UI, not in this git repo:
 
 They do not need `ENABLE_*` flags here. Removing them is also done in that same HA screen.
 
-Home Assistant must be connected to MQTT for **Victron / Sungold / Pi4** sensors. The installer does that for you (HA 2026+). Do not paste broker settings into `configuration.yaml`.
+Home Assistant must be connected to MQTT for **Victron / Sungold / Pi host** sensors. The installer does that for you (HA 2026+). Do not paste broker settings into `configuration.yaml`.
+
+---
+
+## Away from home (Tailscale)
+
+Not a device in this repo. Install Tailscale on the Pi and on your phone to open the **same** Home Assistant dashboard on cellular. Do not put Tailscale keys or machine names in git. Full steps: [TAILSCALE.md](TAILSCALE.md).
 
 ---
 
@@ -161,6 +168,7 @@ Copy this and tick as you go:
 - [ ] Browser: `http://PI-IP:8123` — account created
 - [ ] MQTT devices visible in HA
 - [ ] Sungold only if USB is plugged: `ENABLE_SUNGOLD=1`
+- [ ] Optional away-from-home: [TAILSCALE.md](TAILSCALE.md) (no keys in git)
 
 ---
 
