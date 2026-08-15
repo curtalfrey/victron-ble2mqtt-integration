@@ -1,6 +1,6 @@
 # Deploy (operator reference)
 
-**First time, or sharing this on YouTube?** Start at the **[README](README.md)** (copy-paste install). To turn Victron / Sungold / Home Assistant on or off, use **[docs/DEVICES.md](docs/DEVICES.md)**. This page is the longer installer reference.
+**First time, or sharing this on YouTube?** Start at the **[README](README.md)** (copy-paste install). To turn Victron / Sungold / Home Assistant on or off, use **[docs/DEVICES.md](docs/DEVICES.md)**. To view Home Assistant away from home, use **[docs/TAILSCALE.md](docs/TAILSCALE.md)** (do not publish LAN IPs or Tailscale names). This page is the longer installer reference.
 
 ---
 

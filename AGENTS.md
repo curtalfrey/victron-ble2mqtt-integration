@@ -19,6 +19,7 @@ Broker settings in `configuration.yaml` / `mqtt.yaml` are **invalid**. Use `scri
 
 - [README.md](README.md) — first-time / YouTube install
 - [docs/DEVICES.md](docs/DEVICES.md) — add / remove Victron, Sungold, HA-only devices
+- [docs/TAILSCALE.md](docs/TAILSCALE.md) — optional away-from-home Home Assistant (no host IPs or names in git)
 - [docs/SUNGOLD_SPH302480A.md](docs/SUNGOLD_SPH302480A.md) — Sungold USB Modbus sidecar
 - [docs/ALFA_CLUSTER_INTEGRATION.md](docs/ALFA_CLUSTER_INTEGRATION.md) — hub + Cursor + Prometheus wiring
 - [docs/ENGINEERING_STANDARDS_PLAN.md](docs/ENGINEERING_STANDARDS_PLAN.md) — phased plan: Compose health + supervision, deploy hygiene, CI, security
