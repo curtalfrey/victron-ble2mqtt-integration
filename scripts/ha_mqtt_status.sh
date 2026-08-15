@@ -37,5 +37,6 @@ fi
 
 echo
 echo "== Hint =="
-echo "If YAML is present, disable it to use the UI: run scripts/ha_disable_yaml_mqtt.sh and restart HA."
-echo "If an MQTT integration exists, configure it in the UI (Devices & Services). To re-add fresh, run scripts/ha_remove_mqtt_integration.sh then add via UI."
+echo "If YAML is present, disable it: run scripts/ha_disable_yaml_mqtt.sh and restart HA."
+echo "To enable MQTT (HA 2026+): run scripts/ha_enable_mqtt_integration.sh"
+echo "If an MQTT integration exists, configure it in the UI (Devices & Services). To re-add fresh, run scripts/ha_remove_mqtt_integration.sh then run ha_enable_mqtt_integration.sh."

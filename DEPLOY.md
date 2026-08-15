@@ -1,3 +1,9 @@
+# Deploy (operator reference)
+
+**First time, or sharing this on YouTube?** Start at the **[README](README.md)** (copy-paste install). To turn Victron / Sungold / Home Assistant on or off, use **[docs/DEVICES.md](docs/DEVICES.md)**. This page is the longer installer reference.
+
+---
+
 Quick deploy (recommended)
 
 Preconditions (on the host):
@@ -56,6 +62,7 @@ Or clone this repo and run deploy directly (below).
    # ENABLE_DOCKER_REGISTRY_MIRROR=0 # skip LAN registry mirror (default 1)
    # DOCKER_REGISTRY_MIRROR=http://192.168.0.111:5000  # override mirror URL
    # ENABLE_HOME_ASSISTANT=0       # skip Home Assistant compose (no GHCR) until hub tarball exists
+   # ENABLE_SUNGOLD=1              # Sungold SPH302480A read-only Modbus sidecar (USB must be connected)
    # TRUENAS_IP=192.168.0.111   # TrueNAS address for ping + mount-truenas-hub.sh
    # HA_IMAGE=ghcr.io/home-assistant/home-assistant:2026.7.3  # Compose pin (default)
    # HA_IMAGE_TARBALL=/path/to/home-assistant-2026.7.3.tar.gz  # optional explicit docker load
@@ -68,10 +75,11 @@ Or clone this repo and run deploy directly (below).
 
 Notes:
 - **Sources of truth:** Application Compose files live in this repo (`docker-compose.*.yml`). Dockge wrappers under **`/opt/stacks/<stack>/compose.yaml`** only **`include`** those paths. Mosquitto is a **host `systemd` service** (`mosquitto.service`) with config under **`/etc/mosquitto`** (written by `deploy.sh`). Secrets: **`.env`** and **`victron-secrets.env`** (chmod 600); MQTT watchdog client credentials: **`/etc/mosquitto/watchdog.env`** (written by deploy when Mosquitto auth is enabled).
-- **Dockge:** Stacks appear under **`/opt/stacks`** (`victron`, `homeassistant`, `autoheal`, and `tools` when enabled). Compose **`include`** points at files in your git checkout — edit Compose in the repo, then **Compose → Update** in Dockge or re-run **`sudo bash scripts/deploy.sh`** to refresh wrappers.
+- **Dockge:** Stacks appear under **`/opt/stacks`** (`victron`, `homeassistant`, `autoheal`, `tools`, and **`sungold`** when `ENABLE_SUNGOLD=1`). Compose **`include`** points at files in your git checkout — edit Compose in the repo, then **Compose → Update** in Dockge or re-run **`sudo bash scripts/deploy.sh`** to refresh wrappers.
+- **Sungold SPH302480A (optional):** Read-only USB Modbus sidecar — **`docs/SUNGOLD_SPH302480A.md`**. Default off (`ENABLE_SUNGOLD=0`). Does not change Victron BLE.
 - **Mosquitto broker:** `deploy.sh` runs `mosquitto_restart_and_verify()` after writing config. It checks that the service is active, a listener exists on the port, and `mosquitto_sub` succeeds (with credentials when auth is enabled). The MQTT watchdog timer sources `/etc/mosquitto/watchdog.env`.
 - **MQTT_HOST recommendation:** Set `MQTT_HOST` in `.env` to the Pi's **LAN IP** (e.g. `192.168.0.50`). `redeploy_victron.sh` will use it instead of `localhost` if `localhost` or `127.0.0.1` is detected. This avoids connection refused when the container tries to connect.
-- **Home Assistant → MQTT:** Use the same broker address as above (`MQTT_HOST` value or `127.0.0.1` if it works for HA). Preflight: `set -a; . ./.env; set +a` then `mosquitto_sub -h "${MQTT_HOST:-127.0.0.1}" -p 1883 -u "$MQTT_USER" -P "$MQTT_PASSWORD" -t '$SYS/broker/uptime' -C 1 -W 8 -v`. If it fails, run `journalctl -u mosquitto -n 60`.
+- **Home Assistant → MQTT (HA 2026+):** Broker settings in `configuration.yaml` / `mqtt.yaml` are **invalid**. `deploy.sh` runs `scripts/ha_enable_mqtt_integration.sh` after HA starts (config entry → `127.0.0.1:1883`, same `.env` Mosquitto creds). Do not use `FORCE_HA_MQTT_YAML=1` or the old YAML writers. Preflight: `set -a; . ./.env; set +a` then `mosquitto_sub -h "${MQTT_HOST:-127.0.0.1}" -p 1883 -u "$MQTT_USER" -P "$MQTT_PASSWORD" -t '$SYS/broker/uptime' -C 1 -W 8 -v`. If it fails, run `journalctl -u mosquitto -n 60`.
 - **Home Assistant compose:** `docker-compose.homeassistant.yml` uses `env_file: ./ha-discovery.env`. If that file is missing, **`deploy.sh`** creates it from **`swarm/ha-discovery.env`** (if present) or **`swarm/ha-discovery.env.example`**, or writes a minimal stub from current **`MQTT_*`** env.
 - Uses host networking for Bluetooth and MQTT (see `docker-compose.victron.yml`).
 - If you prefer prebuilt images, push to GHCR and adjust compose to pull.

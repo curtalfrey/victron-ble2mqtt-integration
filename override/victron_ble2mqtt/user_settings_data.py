@@ -25,8 +25,9 @@ mqtt_port = int(os.getenv("MQTT_PORT", "1883"))
 mqtt_username = os.getenv("MQTT_USER", "")
 mqtt_password = os.getenv("MQTT_PASSWORD", "")  # <- NO hardcoded secret
 
-# List of Victron BLE devices to monitor (no secrets here)
-# ADVKEY_* bind by `name` slug (ADVKEY_BATTERY_1, …). Shunt at …:0f uses ADVKEY_BATTERY_2 (key …734c).
+# List of Victron BLE devices to monitor (no secrets here).
+# Replace these example MACs with yours — see docs/DEVICES.md
+# ADVKEY_* bind by `name` slug (ADVKEY_BATTERY_1, …).
 devices = [
     {
         "mac": "d4:ef:fb:b3:d7:0c",

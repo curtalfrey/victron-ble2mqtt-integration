@@ -24,3 +24,14 @@ TZ=America/Chicago
 
 # ADVKEY_* device advertisement keys: prefer ./victron-secrets.env (chmod 600).
 # If the same variable is set in both files, .env wins (see scripts/redeploy_victron.sh).
+
+# Device on/off — see docs/DEVICES.md
+# ENABLE_HOME_ASSISTANT=1
+# --- Sungold SPH302480A (optional read-only Modbus sidecar) ---
+# ENABLE_SUNGOLD=0
+# SUNGOLD_SERIAL_DEVICE=/dev/sungold
+# MODBUS_ADDRESS=1
+# MODBUS_BAUDRATE=9600
+# MQTT_TOPIC=sungold_sph302480a
+# DEVICE_NAME=Sungold SPH302480A
+# POLL_INTERVAL_SEC=5

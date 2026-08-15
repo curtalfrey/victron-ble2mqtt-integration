@@ -65,4 +65,5 @@ Details and verification: **`monitoring/hosts/pi4-victron/README.md`**.
 | Cursor / agents across repos | Multi-root: alfa-ai + victron + monitoring |
 | Hub / large artifacts | `alfa-ai/docs/HUB_ARTIFACTS.md` |
 | Pi metrics in Grafana | `monitoring` + `hosts/pi4-victron/` |
+| Sungold inverter (optional USB sidecar) | `docs/SUNGOLD_SPH302480A.md` — not Petals / not Victron BLE |
 | **Not** in scope | Petals swarm membership, worker wheel variants, GPU fleet |

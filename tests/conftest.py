@@ -11,8 +11,10 @@ from pathlib import Path
 
 # Ensure repo root is on sys.path for local test runs
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+SUNGOLD = ROOT / "sungold"
+for path in (ROOT, SUNGOLD):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 # Suppress paho-mqtt callback API deprecation warnings during tests
 warnings.filterwarnings(

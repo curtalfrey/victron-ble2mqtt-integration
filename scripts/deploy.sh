@@ -4,7 +4,8 @@
 # - Installs Dockge + /opt/stacks wrappers; removes legacy systemd compose runners
 # - Builds image and starts victron / homeassistant / Watchtower via Compose (restart policies survive reboot)
 # - Optional extras via env: ENABLE_PERF_TUNING=1, ENABLE_DOCKGE=1, ENABLE_TOOLS=1, ENABLE_AUTOHEAL=1 (default),
-#   ENABLE_FAILOVER_MONITOR=1, FORCE_HA_MQTT_YAML=1
+#   ENABLE_FAILOVER_MONITOR=1, ENABLE_SUNGOLD=0, ENABLE_HA_MQTT_INTEGRATION=1
+#   FORCE_HA_MQTT_YAML is deprecated (HA 2026+ rejects YAML broker settings).
 # - TrueNAS hub (LAN): ENABLE_DOCKER_REGISTRY_MIRROR=1 (default) merges registry-mirrors http://192.168.0.111:5000 into /etc/docker/daemon.json;
 #   nfs /mnt/cluster/wheels/victron enables PIP_OFFLINE=1 victron image builds and optional HA tarball docker load.
 #   ENABLE_HOME_ASSISTANT=0 skips Home Assistant compose (use when hub has no HA tarball and you must avoid GHCR).
@@ -79,6 +80,7 @@ fi
 : "${MQTT_HOST:=127.0.0.1}"
 : "${MQTT_PORT:=1883}"
 : "${FORCE_HA_MQTT_YAML:=0}"
+: "${ENABLE_HA_MQTT_INTEGRATION:=1}"
 : "${ENABLE_HA_WATCHDOG:=0}"
 : "${ENABLE_HOME_ASSISTANT:=1}"
 : "${ENABLE_DOCKGE:=1}"
@@ -88,6 +90,7 @@ fi
 : "${ENABLE_UNATTENDED_UPGRADES:=0}"
 : "${ENABLE_DOCKER_PRUNE:=1}"
 : "${ENABLE_MQTT_WATCHDOG:=1}"
+: "${ENABLE_SUNGOLD:=0}"
 : "${ENABLE_DOCKER_REGISTRY_MIRROR:=1}"
 : "${DOCKER_REGISTRY_MIRROR:=http://192.168.0.111:5000}"
 : "${TRUENAS_IP:=192.168.0.111}"
@@ -341,6 +344,43 @@ write_dockge_stack_wrapper() {
 include:
   - path: ${included_compose}
 EOF
+}
+
+install_sungold_udev_rule() {
+  if [[ ! -f "$ROOT_DIR/udev/99-sungold-ch340.rules" ]]; then
+    echo "[deploy] WARN: udev/99-sungold-ch340.rules missing — skip Sungold udev install." >&2
+    return 0
+  fi
+  echo "[deploy] Installing Sungold CH340 udev rule (/dev/sungold) ..."
+  sudo install -m 0644 -D "$ROOT_DIR/udev/99-sungold-ch340.rules" /etc/udev/rules.d/99-sungold-ch340.rules
+  sudo udevadm control --reload-rules 2>/dev/null || true
+  sudo udevadm trigger --subsystem-match=tty 2>/dev/null || true
+}
+
+sungold_serial_device_ready() {
+  local dev="${SUNGOLD_SERIAL_DEVICE:-/dev/sungold}"
+  [[ -e "$dev" ]] || [[ -e /dev/sungold ]]
+}
+
+deploy_sungold_stack_if_enabled() {
+  [[ "${ENABLE_SUNGOLD:-0}" == "1" ]] || return 0
+  if [[ ! -f "$ROOT_DIR/docker-compose.sungold.yml" ]]; then
+    echo "[deploy] ENABLE_SUNGOLD=1 but docker-compose.sungold.yml missing — skip." >&2
+    return 0
+  fi
+  install_sungold_udev_rule
+  if ! sungold_serial_device_ready; then
+    echo "[deploy] ENABLE_SUNGOLD=1 but no USB serial device yet (${SUNGOLD_SERIAL_DEVICE:-/dev/sungold})."
+    echo "[deploy] Plug SPH302480A USB-B cable, confirm CH340 (lsusb), set SUNGOLD_SERIAL_DEVICE in .env, re-run deploy."
+    return 0
+  fi
+  echo "[deploy] Building and starting sungold_modbus_ro (read-only Modbus → MQTT) ..."
+  if [[ "${ENABLE_DOCKGE}" == "1" ]]; then
+    write_dockge_stack_wrapper sungold "$ROOT_DIR/docker-compose.sungold.yml"
+    (cd /opt/stacks/sungold && docker compose up -d --build)
+  else
+    (cd "$ROOT_DIR" && docker compose -f docker-compose.sungold.yml up -d --build)
+  fi
 }
 
 install_dockge_host_stack() {
@@ -700,6 +740,8 @@ if [[ "${ENABLE_TOOLS}" == "1" ]]; then
   fi
 fi
 
+deploy_sungold_stack_if_enabled
+
 # Optional: Wi‑Fi failover monitor
 if [[ "${ENABLE_FAILOVER_MONITOR:-0}" == "1" ]]; then
   if [[ -f "$ROOT_DIR/systemd/wifi-failover-monitor@.service" ]]; then
@@ -794,17 +836,7 @@ YAML
 fi
 
 if [[ "${FORCE_HA_MQTT_YAML}" == "1" ]]; then
-  if ! grep -q '^mqtt:' "$HA_CONFIG_DIR/configuration.yaml" 2>/dev/null; then
-    printf '%s\n' 'mqtt: !include mqtt.yaml' >> "$HA_CONFIG_DIR/configuration.yaml"
-  fi
-  cat > "$HA_CONFIG_DIR/mqtt.yaml" <<MQTTYAML
-broker: 127.0.0.1
-port: ${MQTT_PORT}
-${MQTT_USER:+username: ${MQTT_USER}}
-${MQTT_PASSWORD:+password: ${MQTT_PASSWORD}}
-discovery: true
-keepalive: 60
-MQTTYAML
+  echo "[deploy] FORCE_HA_MQTT_YAML=1 is ignored: HA 2026+ rejects YAML broker settings. MQTT is enabled via config entry after HA starts."
 fi
 
 # Bluetooth on HA Container: D-Bus + caps (see HA repairs / habluetooth.manager).
@@ -844,12 +876,17 @@ for i in {1..30}; do
   sleep 2
 done
 
+if [[ "${ENABLE_HA_MQTT_INTEGRATION}" == "1" ]]; then
+  echo "[deploy] Ensuring Home Assistant MQTT config entry (HA 2026+; not YAML) ..."
+  bash "$ROOT_DIR/scripts/ha_enable_mqtt_integration.sh" || echo "[deploy] MQTT integration script failed (check HA logs)."
+fi
+
 fi
 # ------------------------------------------------------------
 # 7) Quick sanity: show container status and recent logs snippet
 # ------------------------------------------------------------
 echo "[deploy] Container status:"
-docker ps --format '{{.Names}}\t{{.Status}}' | egrep 'victron|homeassistant|dockge|watchtower|autoheal' || true
+docker ps --format '{{.Names}}\t{{.Status}}' | egrep 'victron|homeassistant|sungold|dockge|watchtower|autoheal' || true
 
 if [[ "${ENABLE_DOCKGE}" == "1" ]]; then
   echo "[deploy] Dockge UI: http://${MQTT_HOST}:5006 (stack files live under /opt/stacks; included Compose paths resolve to ${ROOT_DIR})."
