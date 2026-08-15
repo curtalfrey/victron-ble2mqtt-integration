@@ -1,144 +1,201 @@
 # victron-ble2mqtt-integration
 
-Bridge Victron BLE advertisements → MQTT with Home Assistant discovery. Designed for Raspberry Pi with BlueZ; publishes entities via [`ha_services`](https://pypi.org/project/ha_services/).
+## What it is
+
+A **Raspberry Pi home-energy stack**. It listens to your solar / battery gear, sends the numbers to a local MQTT broker (Mosquitto), and shows them in **Home Assistant** — the dashboard you open in a browser or on your phone (`http://YOUR-PI-IP:8123`).
+
+It is meant to run **on your LAN**, not in the cloud. You do not need to know GitHub to use it; the install steps below are copy-and-paste on the Pi.
+
+One installer (`scripts/deploy.sh`) sets up Docker, Mosquitto, Home Assistant, and the Victron Bluetooth reader. Optional pieces (Sungold inverter, extra meters) turn on when you are ready.
+
+## What it can do and what it’s for
+
+**What it’s for:** see live battery, solar, and (optionally) inverter data at home without sitting in VictronConnect or a vendor cloud app. Useful if you already have Victron Bluetooth devices and want them next to lights, thermostats, and other Home Assistant stuff.
+
+**What it can do**
+
+| Gear | What this repo does |
+|------|---------------------|
+| Victron SmartShunt / MPPT (Bluetooth) | Reads BLE advertisements and creates Home Assistant sensors (voltage, current, SOC, solar power, charge state, …) |
+| Sungold SPH302480A (USB cable) | Optional **read-only** Modbus sidecar — PV, battery, grid, load. Off until you plug USB and set `ENABLE_SUNGOLD=1` |
+| The Raspberry Pi itself | CPU, temperature, Wi‑Fi, uptime — so you can see if the box is healthy |
+| Refoss / Govee / other Wi‑Fi devices | **Not** installed here. Add those inside Home Assistant → Settings → Devices & services |
+
+**What it does *not* do**
+
+- It does **not** change inverter or charger settings (Sungold is sensors only; use the front panel).
+- It does **not** replace VictronConnect for pairing or advertisement keys.
+- It does **not** require a GPU cluster, Tailscale, or any other repo to get a basic dashboard.
+
+**Add or remove gear:** [docs/DEVICES.md](docs/DEVICES.md) — one page of on/off switches.
 
 ---
 
-## What’s working (verified)
+## What you need
 
-- ✅ BLE scanning on `hci0` (LE-only) is stable.
-- ✅ Victron **Solar Charger (VE.Direct SmarT / BlueSolar MPPT 75/15 rev3)** is detected and decoded.
-- ✅ MQTT discovery + states arrive in HA (entities like `battery_voltage`, `charge_state`, `solar_power`, etc.).
-- ✅ **Dockge** on **`http://<pi-ip>:5006`** manages Compose stacks (`victron`, `homeassistant`, `autoheal`, Watchtower); survives reboot via container `restart` policies plus **Compose `healthcheck`** + **`autoheal`** for wedged services.
+1. A **Raspberry Pi** (Pi 4 is what we use) with Raspberry Pi OS and internet.
+2. The Pi on your **home Wi‑Fi or Ethernet**.
+3. **Bluetooth on** (for Victron). Close the VictronConnect app on your phone while testing — it can hide the Bluetooth ads.
+4. About 20–40 minutes the first time (Home Assistant image is large).
 
-See Home Assistant → Settings → Devices & Services → MQTT for discovered entities.
-
-
+Optional later: Sungold USB cable, extra Victron devices, Tailscale for away-from-home access.
 
 ---
 
-## Requirements
+## Easy install (recommended)
 
-- Raspberry Pi with BlueZ (Bluetooth) enabled
-- Docker Engine + Compose v2 (installed by deploy script if missing)
+On the Pi, open a terminal and paste **one block at a time**.
 
-## System info publishing (Pi4)
+### 1. Download the project
 
-- Previously, Pi system metrics (CPU, temp, load, wifi, etc.) were only published when a BLE packet was decoded and forwarded. If no Victron BLE adverts were seen, these sensors appeared to “stall.”
-- Now, a periodic publisher runs inside `override/victron_ble2mqtt/__main__.py`, pushing system metrics at a fixed interval regardless of BLE activity. This makes Pi4 data flow consistently, including right after container start.
-- Tuning: `SYSTEM_POLL_THROTTLE_SEC` (default 3s) in `docker-compose.victron.yml`.
-- Reboot-proof: **`scripts/deploy.sh`** installs **Dockge** and writes **`/opt/stacks/*/compose.yaml`** wrappers that `include` the repo Compose files; containers use `restart: unless-stopped`.
+`git clone` means “download this folder from the internet.”
 
-**Important:** The bridge requires a working Mosquitto broker on port 1883. `deploy.sh` now includes `mosquitto_restart_and_verify()` that checks the listener and authenticated subscribe. If you see "Connection refused", re-run `sudo bash scripts/deploy.sh` after ensuring `MQTT_HOST` in `.env` is the Pi's LAN IP (not localhost).
+```bash
+sudo apt update
+sudo apt install -y git
+git clone https://github.com/Curt-Alfrey-s-Org/victron-ble2mqtt-integration.git
+cd victron-ble2mqtt-integration
+```
 
-> If you run tails/clients in Docker, set `MQTT_HOST` to the broker’s **LAN IP**, not `localhost`.
+### 2. Create your secrets file
 
----
+`.env` is a private settings file. It is **not** uploaded to GitHub if you follow these steps.
 
-## Deploy
+```bash
+cp dotenv.sample .env
+chmod 600 .env
+nano .env
+```
 
-Run the unified installer:
+Change these three lines (use your Pi’s LAN IP from `hostname -I`, not `192.168.0.XX`):
+
+```text
+MQTT_HOST=192.168.0.50
+MQTT_USER=victron
+MQTT_PASSWORD=pick-a-long-password
+```
+
+Save: `Ctrl+O`, Enter, then `Ctrl+X`.
+
+Leave Sungold **off** (`ENABLE_SUNGOLD=0`) until the USB cable is plugged in. See [docs/DEVICES.md](docs/DEVICES.md).
+
+### 3. Add Victron Bluetooth keys (if you have Victron)
+
+Each Victron device has a 32-character **advertisement key** (from VictronConnect). Put them in a second private file:
+
+```bash
+cp swarm/victron-secrets.env.example victron-secrets.env
+chmod 600 victron-secrets.env
+nano victron-secrets.env
+```
+
+Example:
+
+```text
+ADVKEY_BATTERY_1=your32hexcharactershere00000000
+ADVKEY_SOLAR_CONTROLLER=your32hexcharactershere00000000
+ADVKEY_BATTERY_2=your32hexcharactershere00000000
+```
+
+You also need the device **MAC addresses** in `override/victron_ble2mqtt/user_settings_data.py` (this repo ships the author’s MACs as examples — **replace them with yours**). Step-by-step: [docs/DEVICES.md](docs/DEVICES.md#victron-bluetooth).
+
+### 4. Run the installer
+
+This installs Docker, Mosquitto (MQTT), Home Assistant, and the Victron reader. Safe to run more than once.
 
 ```bash
 sudo bash scripts/deploy.sh
 ```
 
-It installs prerequisites, configures logging (Docker daemon json-file rotation and journald caps), sets up Mosquitto, builds the bridge image, starts **Dockge** (:5006), brings up **victron** / **homeassistant** / **autoheal** / **Watchtower** via Compose, and installs helper timers (MQTT broker watchdog, optional docker prune, VS Code cleanup). Legacy systemd **HA** HTTP watchdog is **off** by default — Compose **`healthcheck`** + **`autoheal`** cover Home Assistant liveness.
-See `DEPLOY.md` for options and troubleshooting.
+First run can take a while. When it finishes:
 
-**Same LAN as the Alfa cluster?** See [docs/ALFA_CLUSTER_INTEGRATION.md](docs/ALFA_CLUSTER_INTEGRATION.md) for TrueNAS hub usage, cross-links to **alfa-ai**, and **monitoring** (Prometheus / `node_exporter` on the Pi).
+```bash
+docker ps
+```
+
+You should see `victron_ble2mqtt` and `homeassistant` listed as **Up**.
+
+If `docker` says **permission denied**, log out and back in (or reboot), then try `docker ps` again.
+
+### 5. Open Home Assistant
+
+On a phone or PC on the same Wi‑Fi:
+
+```text
+http://YOUR-PI-IP:8123
+```
+
+Example: `http://192.168.0.50:8123`
+
+Create your Home Assistant account on first visit. MQTT is wired automatically by the installer (Home Assistant 2026+).
+
+**Dockge** (optional container UI): `http://YOUR-PI-IP:5006`
 
 ---
 
-## Production deployment & tools
+## After install — turn devices on or off
 
-Do not commit secrets (ADVKEY_*, MQTT_PASSWORD, etc.). Provide via `.env` or environment-managed secrets.
+| Want | Do this | Details |
+|------|---------|---------|
+| Victron batteries / MPPT | Keys in `victron-secrets.env` + MACs in `user_settings_data.py`, then `sudo bash scripts/deploy.sh` | [DEVICES.md](docs/DEVICES.md#victron-bluetooth) |
+| Sungold inverter | Plug USB, set `ENABLE_SUNGOLD=1` in `.env`, run deploy | [DEVICES.md](docs/DEVICES.md#sungold-inverter) |
+| Skip Home Assistant | `ENABLE_HOME_ASSISTANT=0` before deploy | You still get MQTT |
+| Skip Sungold | Leave `ENABLE_SUNGOLD=0` (default) | Victron is unchanged |
 
+You do **not** need to delete the whole project to drop a device. Flip a flag or remove one key, then re-run deploy.
 
-### VS Code RAM usage on Raspberry Pi
+---
 
-If VS Code Server uses too much memory:
+## Did it work?
 
-- Use the workspace settings in `.vscode/settings.json` (already included) to reduce indexers and watchers.
-- Kill all VS Code Server processes on demand:
-  - `bash scripts/kill_vscode_server.sh`
-- Automatic cleanup runs every 10 minutes and removes stale VS Code Server processes older than 15 minutes: see `scripts/vscode_server_cleanup.sh` and systemd units `vscode-server-cleanup.service` and `vscode-server-cleanup.timer`.
+| Check | Command or place |
+|-------|------------------|
+| Containers running | `docker ps` |
+| Victron / Pi numbers | Home Assistant → **Settings → Devices & services → MQTT** |
+| Sungold (if enabled) | Same MQTT page, device **Sungold SPH302480A** |
+| Live Victron logs | `docker logs -f victron_ble2mqtt` |
+| Live Sungold logs | `docker logs -f sungold_modbus_ro` |
 
+Close the Victron phone app if sensors stay empty.
 
-## One-shot debug run
+---
 
-Publishes discovery + live states to MQTT (Ctrl-C to stop):
+## If something goes wrong
 
-```bash
-cd ~/victron-ble2mqtt-integration
-set -a
-. swarm/ha-discovery.env
-. swarm/victron-secrets.env
-set +a
-PYTHONPATH="$PWD/override:$PWD/fixes:$PWD" python3 - <<'PY'
-from victron_ble2mqtt.cli_app.mqtt import publish_loop
-publish_loop(verbosity=3)  # DEBUG
-PY
+| Problem | Try this |
+|---------|----------|
+| Cannot open `:8123` | `hostname -I` — use that IP. Wait a few minutes after first install. |
+| No Victron entities | Close VictronConnect. Check ADVKEY and MAC. `sudo bluetoothctl show` should say Powered: yes. |
+| “Connection refused” on MQTT | Set `MQTT_HOST` to the Pi LAN IP, then `sudo bash scripts/deploy.sh` |
+| Sungold skipped | USB plugged? `ls -l /dev/sungold`? `ENABLE_SUNGOLD=1` in `.env`? |
+| Need the long version | [DEPLOY.md](DEPLOY.md) |
 
-You should see BLE detections and MQTT “CONNECT/CONNACK” logs, followed by discovery/state publishes.
+---
 
-Quick checks
-1) Verify Victron devices are advertising
+## Words you will see
 
-Close the Victron app on your phone (it can suppress adverts), then:
+| Word | Plain meaning |
+|------|----------------|
+| **Git / clone** | Download this project folder |
+| **`.env`** | Your private passwords and on/off flags |
+| **Docker** | Runs each program in its own box (`victron_ble2mqtt`, `homeassistant`, …) |
+| **MQTT / Mosquitto** | Local mailbox the boxes use to talk |
+| **Home Assistant** | The website/app dashboard (`:8123`) |
+| **BLE** | Bluetooth Low Energy (Victron ads) |
+| **Modbus** | Wired USB talk to the Sungold inverter (read-only here) |
+| **ADVKEY** | Secret that unlocks a Victron Bluetooth advertisement |
 
-sudo btmgmt -i hci0 power off
-sudo btmgmt -i hci0 le on
-sudo btmgmt -i hci0 bredr off
-sudo btmgmt -i hci0 power on
+---
 
-# Short scan; you should see your device MACs
-sudo timeout 25s btmgmt -i hci0 find -l \
- | egrep 'D4:EF:FB:B3:D7:0C|CB:0D:C2:0A:AE:0F|D7:69:EB:1F:F8:3D' || echo 'NO MATCHES'
+## More docs (when you need them)
 
-**USB BLE dongle (common fix when the Pi’s built-in radio is weak or busy):** list adapters with `bluetoothctl list`, then put the dongle’s interface in `.env` (e.g. `BLE_ADAPTER=hci1`). Re-run `scripts/redeploy_victron.sh` or `deploy.sh` so the container picks it up; startup logs include `BLE scanner using adapter hci1`. Scan with the same index: `sudo btmgmt -i hci1 find -l`. Point **Home Assistant** at the other adapter (Settings → Bluetooth) if you want HA on built-in and Victron on the dongle.
+| Doc | Who it is for |
+|-----|----------------|
+| [docs/DEVICES.md](docs/DEVICES.md) | Add / remove Victron, Sungold, HA-only devices |
+| [docs/SUNGOLD_SPH302480A.md](docs/SUNGOLD_SPH302480A.md) | Sungold USB, udev, smoke test |
+| [DEPLOY.md](DEPLOY.md) | Installer flags, Dockge, troubleshooting |
+| [docs/ALFA_CLUSTER_INTEGRATION.md](docs/ALFA_CLUSTER_INTEGRATION.md) | Optional: same LAN as the Alfa / TrueNAS hub |
 
-If you have a second adapter you are **not** using for Victron, you can power it off to reduce noise:
+Do not commit `.env` or `victron-secrets.env`. They hold passwords and device keys.
 
-sudo btmgmt -i hci1 power off
-
-2) Watch MQTT
-
-From the Pi:
-
-mosquitto_sub -h "$MQTT_HOST" -p "${MQTT_PORT:-1883}" -u "$MQTT_USER" -P "$MQTT_PASSWORD" -v \
-  -t 'homeassistant/#' -t 'victron_ble/#'
-
-
-If you prefer container log streaming, use **Dockge** or `docker logs -f <container>`.
-
-Home Assistant
-
-Go to Settings → Devices & Services → MQTT.
-
-The device should appear under your host device.
-
-Entities include: battery_voltage, battery_charging_current, charge_state, solar_power, charging_power, load, load_power, yield_today, and an rssi sensor.
-
-Troubleshooting
-
-Discovery config but no states
-
-Ensure the Victron app is closed.
-
-Re-check VICTRON_DEVICE_KEYS formatting and MACs.
-
-Confirm adverts show up during btmgmt find -l while the publisher runs.
-
-Docker tails show “Lookup error”
-
-MQTT_HOST was a placeholder/comment. Set it to the broker’s LAN IP.
-
-Notes
-- The deploy script can repair a malformed `/etc/docker/daemon.json` and restart Docker safely.
-- Stacks start on boot via Docker **`restart: unless-stopped`** (no systemd unit for the Victron container). **`deploy.sh`** still enables **bluetooth.service** during prerequisite setup.
-
-License
-
-MIT (or the project’s existing license).
-
+License: MIT (see the project license file).

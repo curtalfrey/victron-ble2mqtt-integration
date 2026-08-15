@@ -11,8 +11,15 @@
 - Hub policy and TrueNAS layout: **`alfa-ai/docs/HUB_ARTIFACTS.md`** (GitHub or local clone).
 - After changing deploy or Docker on the Pi, align **monitoring** scrape config via **`monitoring/hosts/pi4-victron/README.md`**.
 
+## Home Assistant MQTT (HA 2026+)
+
+Broker settings in `configuration.yaml` / `mqtt.yaml` are **invalid**. Use `scripts/ha_enable_mqtt_integration.sh` (UI config entry). Do not follow older `ha_fix_mqtt_localhost.sh` / `FORCE_HA_MQTT_YAML` YAML writers. After editing `/opt/homeassistant/.storage` while HA is running, restart the `homeassistant` container.
+
 ## Doc map
 
+- [README.md](README.md) — first-time / YouTube install
+- [docs/DEVICES.md](docs/DEVICES.md) — add / remove Victron, Sungold, HA-only devices
+- [docs/SUNGOLD_SPH302480A.md](docs/SUNGOLD_SPH302480A.md) — Sungold USB Modbus sidecar
 - [docs/ALFA_CLUSTER_INTEGRATION.md](docs/ALFA_CLUSTER_INTEGRATION.md) — hub + Cursor + Prometheus wiring
 - [docs/ENGINEERING_STANDARDS_PLAN.md](docs/ENGINEERING_STANDARDS_PLAN.md) — phased plan: Compose health + supervision, deploy hygiene, CI, security
 - [DEPLOY.md](DEPLOY.md) — installer behaviour and flags

@@ -1,0 +1,15 @@
+---
+description: HA 2026+ MQTT is a UI config entry — never YAML broker settings
+alwaysApply: true
+---
+
+# Home Assistant MQTT (2026+)
+
+HA 2026 rejects broker settings in `configuration.yaml` / `mqtt.yaml`. Those keys (`broker`, `port`, `username`, `password`, `discovery`) are **invalid** and can prevent MQTT setup.
+
+- **Do:** `scripts/ha_enable_mqtt_integration.sh` (config entry → `127.0.0.1:1883`, same `.env` Mosquitto creds).
+- **Do not:** write `mqtt: !include mqtt.yaml`, or run `ha_fix_mqtt_localhost.sh` / `FORCE_HA_MQTT_YAML=1` as YAML writers.
+- **Do not** invent a `core.config_entries` MQTT object from scratch. Clone a **live** entry’s top-level keys. HA 2026 requires `discovery_keys` (object) and `subentries` (list) on every entry or Core crash-loops.
+- After editing `/opt/homeassistant/.storage/*` while HA is running, **restart** `homeassistant` (or reload Lovelace). File writes are not live.
+- Scripts copied from Windows must be **LF**. `sed -i 's/\r$//'` on the Pi before `bash`.
+- Verify MQTT with all three: container **healthy**, Mosquitto has a **persistent** HA client (`p5` from `127.0.0.1`), and entity **states** exist — not registry rows alone. `curl :8123` is not enough.

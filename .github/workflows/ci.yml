@@ -26,9 +26,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install ruff pytest
           pip install -r requirements.lock
+          pip install -r sungold/requirements.txt
 
-      - name: Ruff check (runtime override + package)
-        run: ruff check override/victron_ble2mqtt victron_ble2mqtt
+      - name: Ruff check (runtime override + package + sungold)
+        run: ruff check override/victron_ble2mqtt victron_ble2mqtt sungold/sungold_modbus_ro
 
       - name: Pytest
         run: pytest tests/ -q

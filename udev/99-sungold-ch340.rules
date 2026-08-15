@@ -1,0 +1,7 @@
+# Stable symlink for Sungold SPH302480A USB serial (CH340 / QinHeng 1a86).
+# Install: sudo cp udev/99-sungold-ch340.rules /etc/udev/rules.d/ && sudo udevadm control --reload && sudo udevadm trigger
+#
+# After plug-in, confirm:
+#   ls -l /dev/sungold
+#   ls /dev/serial/by-id/
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="sungold", GROUP="dialout", MODE="0660"

@@ -1,5 +1,7 @@
 Production deployment notes — Raspberry Pi (aarch64)
 
+**New install?** Use the root [README](../README.md) and [docs/DEVICES.md](../docs/DEVICES.md). This file is extra production detail.
+
 Goal
 - Run **victron-ble2mqtt**, **Home Assistant**, **Dockge**, and optional **Watchtower** on a Raspberry Pi (aarch64) in a reproducible way.
 

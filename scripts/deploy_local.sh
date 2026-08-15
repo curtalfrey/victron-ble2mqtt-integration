@@ -244,21 +244,9 @@ homeassistant:
   time_zone: America/Chicago
 YAML
 fi
-# Modern Home Assistant prefers UI-based MQTT integration.
-# For this environment we default to YAML to restore previous working behavior. Set FORCE_HA_MQTT_YAML=0 to disable.
+# HA 2026+ rejects YAML broker settings. MQTT is a UI config entry after HA starts.
 if [[ "${FORCE_HA_MQTT_YAML:-0}" == "1" ]]; then
-  if ! grep -q '^mqtt:' "$HA_CONFIG_DIR/configuration.yaml" 2>/dev/null; then
-    printf "%s\n" "mqtt: !include mqtt.yaml" >> "$HA_CONFIG_DIR/configuration.yaml" || true
-  fi
-  cat > "$HA_CONFIG_DIR/mqtt.yaml" <<MQTTYAML
-broker: 127.0.0.1
-port: ${MQTT_PORT}
-# Leave username/password blank to allow anonymous if your broker allows it.
-${MQTT_USER:+username: ${MQTT_USER}}
-${MQTT_PASSWORD:+password: ${MQTT_PASSWORD}}
-discovery: true
-keepalive: 60
-MQTTYAML
+  echo "[deploy_local] FORCE_HA_MQTT_YAML=1 is ignored: HA 2026+ rejects YAML broker settings."
 fi
 if docker ps -a --format '{{.Names}}' | grep -qw homeassistant; then
   docker start homeassistant >/dev/null || true
@@ -280,6 +268,11 @@ for i in {1..30}; do
   fi
   sleep 2
 done
+
+if [[ "${ENABLE_HA_MQTT_INTEGRATION:-1}" == "1" ]]; then
+  echo "[deploy_local] Ensuring Home Assistant MQTT config entry (HA 2026+; not YAML) ..."
+  bash "$REPO_ROOT/scripts/ha_enable_mqtt_integration.sh" || echo "[deploy_local] MQTT integration script failed (check HA logs)."
+fi
 
 echo "Deployment done. Logs: docker logs -f victron_ble2mqtt"
 
