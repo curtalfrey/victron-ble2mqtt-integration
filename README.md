@@ -4,7 +4,7 @@
 
 A **Raspberry Pi home-energy stack**. It listens to your solar / battery gear, sends the numbers to a local MQTT broker (Mosquitto), and shows them in **Home Assistant** — the dashboard you open in a browser or on your phone (`http://YOUR-PI-IP:8123`).
 
-It is meant to run **on your LAN**, not in the cloud. You do not need to know GitHub to use it; the install steps below are copy-and-paste on the Pi.
+It is meant to run **on your LAN**, not in a vendor cloud. At home you open Home Assistant on Wi‑Fi; **away from home** you use optional **Tailscale** (a private VPN) so you can review the same numbers without opening the dashboard to the public internet. You do not need to know GitHub to use it; the install steps below are copy-and-paste on the Pi. Tailscale is covered in [docs/TAILSCALE.md](docs/TAILSCALE.md).
 
 One installer (`scripts/deploy.sh`) sets up Docker, Mosquitto, Home Assistant, and the Victron Bluetooth reader. Optional pieces (Sungold inverter, extra meters) turn on when you are ready.
 
