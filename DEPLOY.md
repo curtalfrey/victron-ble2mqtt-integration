@@ -1,6 +1,6 @@
 # Deploy (operator reference)
 
-**First time, or sharing this on YouTube?** Start at the **[README](README.md)** (copy-paste install). To turn Victron / Sungold / Home Assistant on or off, use **[docs/DEVICES.md](docs/DEVICES.md)**. To view Home Assistant away from home, use **[docs/TAILSCALE.md](docs/TAILSCALE.md)** (do not publish LAN IPs or Tailscale names). This page is the longer installer reference.
+**First time, or sharing this on YouTube?** Start at the **[README](README.md)** (copy-paste install). To turn Victron / Sungold / Home Assistant on or off, use **[docs/DEVICES.md](docs/DEVICES.md)**. Two Pis from one clone: **`HOST_ROLE=pi4`** (this stack) vs **`HOST_ROLE=pi5`** (house AdGuard + BLE gateway) — [docs/PI5_HOUSE_EDGE.md](docs/PI5_HOUSE_EDGE.md). To view Home Assistant away from home, use **[docs/TAILSCALE.md](docs/TAILSCALE.md)** (do not publish LAN IPs or Tailscale names). This page is the longer installer reference.
 
 ---
 
@@ -62,7 +62,7 @@ Or clone this repo and run deploy directly (below).
    # ENABLE_DOCKER_REGISTRY_MIRROR=0 # skip LAN registry mirror (default 1)
    # DOCKER_REGISTRY_MIRROR=http://192.168.0.111:5000  # override mirror URL
    # ENABLE_HOME_ASSISTANT=0       # skip Home Assistant compose (no GHCR) until hub tarball exists
-   # ENABLE_SUNGOLD=1              # Sungold SPH302480A read-only Modbus sidecar (USB must be connected)
+   # HOST_ROLE=pi5              # house Pi: AdGuard + Theengs (skips Victron/HA/Mosquitto)
    # TRUENAS_IP=192.168.0.111   # TrueNAS address for ping + mount-truenas-hub.sh
    # HA_IMAGE=ghcr.io/home-assistant/home-assistant:2026.7.3  # Compose pin (default)
    # HA_IMAGE_TARBALL=/path/to/home-assistant-2026.7.3.tar.gz  # optional explicit docker load

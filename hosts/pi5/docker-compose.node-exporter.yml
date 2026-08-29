@@ -1,0 +1,26 @@
+# Raspberry Pi 5 — node_exporter host metrics (:9100).
+# Prometheus job node-remote on 192.168.0.107.
+
+name: pi5-node-exporter
+
+services:
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:v1.11.1
+    container_name: pi5-node-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

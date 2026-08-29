@@ -5,6 +5,7 @@
 # - Builds image and starts victron / homeassistant / Watchtower via Compose (restart policies survive reboot)
 # - Optional extras via env: ENABLE_PERF_TUNING=1, ENABLE_DOCKGE=1, ENABLE_TOOLS=1, ENABLE_AUTOHEAL=1 (default),
 #   ENABLE_FAILOVER_MONITOR=1, ENABLE_SUNGOLD=0, ENABLE_HA_MQTT_INTEGRATION=1
+#   HOST_ROLE=pi4 (default: Victron/HA/Mosquitto) or pi5 (AdGuard + Theengs house BLE)
 #   FORCE_HA_MQTT_YAML is deprecated (HA 2026+ rejects YAML broker settings).
 # - TrueNAS hub (LAN): ENABLE_DOCKER_REGISTRY_MIRROR=1 (default) merges registry-mirrors http://192.168.0.111:5000 into /etc/docker/daemon.json;
 #   nfs /mnt/cluster/wheels/victron enables PIP_OFFLINE=1 victron image builds and optional HA tarball docker load.
@@ -66,14 +67,32 @@ ensure_dotenv_for_mqtt
 # --- load env if present ---
 if [[ -f ./.env ]]; then set -a; . ./.env; set +a; fi
 
+# --- host role: one repo, two Pis ---
+if [[ -z "${HOST_ROLE:-}" ]]; then
+  _lan_ip="$(hostname -I 2>/dev/null | awk '{print $1}' || echo '')"
+  case "$_lan_ip" in
+    192.168.0.240) HOST_ROLE=pi5 ;;
+    *) HOST_ROLE=pi4 ;;
+  esac
+  echo "[deploy] HOST_ROLE=${HOST_ROLE} (auto from LAN IP ${_lan_ip:-unknown}; set HOST_ROLE in .env to override)"
+  if [[ -f ./.env ]] && ! grep -qE '^[[:space:]]*HOST_ROLE=' ./.env 2>/dev/null; then
+    printf '\nHOST_ROLE=%s\n' "$HOST_ROLE" >> ./.env
+  fi
+else
+  echo "[deploy] HOST_ROLE=${HOST_ROLE}"
+fi
+
 # Force a real LAN IP for MQTT_HOST if it is still localhost/127.0.0.1.
 # This is critical for the container to reach the broker when using network_mode: host.
-if [[ "${MQTT_HOST:-}" == "localhost" || "${MQTT_HOST:-}" == "127.0.0.1" || -z "${MQTT_HOST:-}" ]]; then
-  LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}' || echo '')"
-  if [[ -n "$LAN_IP" && "$LAN_IP" != "127.0.0.1" ]]; then
-    echo "[deploy] Setting MQTT_HOST=${LAN_IP} in .env (Pi LAN IP). Edit .env to change."
-    sed -i "s/^MQTT_HOST=.*/MQTT_HOST=${LAN_IP}/" ./.env 2>/dev/null || echo "MQTT_HOST=${LAN_IP}" >> ./.env
-    MQTT_HOST="$LAN_IP"
+# On the Pi 5, MQTT_HOST must stay the Pi 4 broker — never rewrite to this host.
+if [[ "${HOST_ROLE}" != "pi5" ]]; then
+  if [[ "${MQTT_HOST:-}" == "localhost" || "${MQTT_HOST:-}" == "127.0.0.1" || -z "${MQTT_HOST:-}" ]]; then
+    LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}' || echo '')"
+    if [[ -n "$LAN_IP" && "$LAN_IP" != "127.0.0.1" ]]; then
+      echo "[deploy] Setting MQTT_HOST=${LAN_IP} in .env (Pi LAN IP). Edit .env to change."
+      sed -i "s/^MQTT_HOST=.*/MQTT_HOST=${LAN_IP}/" ./.env 2>/dev/null || echo "MQTT_HOST=${LAN_IP}" >> ./.env
+      MQTT_HOST="$LAN_IP"
+    fi
   fi
 fi
 
@@ -439,6 +458,11 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 ensure_group_member "${SUDO_USER:-$USER}" docker
+
+if [[ "${HOST_ROLE}" == "pi5" ]]; then
+  echo "[deploy] HOST_ROLE=pi5 — handing off to scripts/deploy_pi5.sh (house DNS + BLE gateway)"
+  exec bash "$ROOT_DIR/scripts/deploy_pi5.sh"
+fi
 
 # Mosquitto broker + clients (for local broker default)
 if ! need_cmd mosquitto; then

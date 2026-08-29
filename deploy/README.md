@@ -3,7 +3,8 @@ Production deployment notes — Raspberry Pi (aarch64)
 **New install?** Use the root [README](../README.md) and [docs/DEVICES.md](../docs/DEVICES.md). This file is extra production detail.
 
 Goal
-- Run **victron-ble2mqtt**, **Home Assistant**, **Dockge**, and optional **Watchtower** on a Raspberry Pi (aarch64) in a reproducible way.
+- **Pi 4:** Run **victron-ble2mqtt**, **Home Assistant**, **Dockge**, and optional **Watchtower**.
+- **Pi 5:** Same git checkout with **`HOST_ROLE=pi5`** — AdGuard DNS + Theengs BLE gateway (no second HA). See [docs/PI5_HOUSE_EDGE.md](../docs/PI5_HOUSE_EDGE.md).
 
 Assumptions
 - Host is Raspberry Pi OS / Debian-based aarch64 with Docker Engine and Docker Compose v2 installed.

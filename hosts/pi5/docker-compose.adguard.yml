@@ -1,0 +1,57 @@
+# Raspberry Pi 5 — AdGuard Home DNS + Prometheus exporter.
+#
+# host networking is REQUIRED: under bridge networking every DNS query is
+# source-NATed to the docker gateway, so AdGuard would see one client.
+
+name: pi5-adguard
+
+services:
+  adguardhome:
+    image: adguard/adguardhome:v0.107.79
+    container_name: pi5-adguardhome
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /opt/adguard/conf:/opt/adguardhome/conf
+      - /opt/adguard/work:/opt/adguardhome/work
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/ >/dev/null 2>&1 || wget -qO- http://127.0.0.1:3000/ >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  adguard-exporter:
+    image: ebrianne/adguard-exporter:latest
+    # Hub no longer serves this image by digest. Keep the local arm64 copy.
+    pull_policy: never
+    container_name: pi5-adguard-exporter
+    restart: unless-stopped
+    profiles:
+      - exporter
+    network_mode: host
+    depends_on:
+      - adguardhome
+    volumes:
+      - ./adguard-exporter.password:/etc/adguard-exporter/password:ro
+    command:
+      - ./adguard_exporter
+      - '-adguard_protocol=http'
+      - '-adguard_hostname=127.0.0.1'
+      - '-adguard_port=8080'
+      - '-adguard_username=n4s1'
+      - '-adguard_password=/etc/adguard-exporter/password'
+      - '-password_from_file'
+      - '-server_port=9617'
+      - '-interval=30s'
+      - '-rdns_enabled'
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

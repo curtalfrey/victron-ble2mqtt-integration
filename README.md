@@ -4,6 +4,8 @@
 
 A **Raspberry Pi home-energy stack**. It listens to your solar / battery gear, sends the numbers to a local MQTT broker (Mosquitto), and shows them in **Home Assistant** — the dashboard you open in a browser or on your phone (`http://YOUR-PI-IP:8123`).
 
+The same repo also runs on a **second Pi in the house** (`HOST_ROLE=pi5`): LAN DNS (AdGuard) and a Bluetooth gateway that forwards house BLE into the Pi 4 broker. The Pi 4 cannot hear those radios from another building. Details: [docs/PI5_HOUSE_EDGE.md](docs/PI5_HOUSE_EDGE.md).
+
 It is meant to run **on your LAN**, not in a vendor cloud. At home you open Home Assistant on Wi‑Fi; **away from home** you use optional **Tailscale** (a private VPN) so you can review the same numbers without opening the dashboard to the public internet. You do not need to know GitHub to use it; the install steps below are copy-and-paste on the Pi. Tailscale is covered in [docs/TAILSCALE.md](docs/TAILSCALE.md).
 
 One installer (`scripts/deploy.sh`) sets up Docker, Mosquitto, Home Assistant, and the Victron Bluetooth reader. Optional pieces (Sungold inverter, extra meters) turn on when you are ready.
@@ -19,6 +21,7 @@ One installer (`scripts/deploy.sh`) sets up Docker, Mosquitto, Home Assistant, a
 | Victron SmartShunt / MPPT (Bluetooth) | Reads BLE advertisements and creates Home Assistant sensors (voltage, current, SOC, solar power, charge state, …) |
 | Sungold SPH302480A (USB cable) | Optional **read-only** Modbus sidecar — PV, battery, grid, load. Off until you plug USB and set `ENABLE_SUNGOLD=1` |
 | The Raspberry Pi itself | CPU, temperature, Wi‑Fi, uptime — so you can see if the box is healthy |
+| House BLE (second Pi) | Optional **Pi 5** (`HOST_ROLE=pi5`) forwards decoded BLE to this Mosquitto |
 | Refoss / Govee / other Wi‑Fi devices | **Not** installed here. Add those inside Home Assistant → Settings → Devices & services |
 | Phone / laptop away from home | Optional **Tailscale** VPN — same Home Assistant, no router port-forward. [docs/TAILSCALE.md](docs/TAILSCALE.md) |
 
@@ -146,6 +149,7 @@ To review the same numbers on cellular or another network, install **Tailscale**
 | Sungold inverter | Plug USB, set `ENABLE_SUNGOLD=1` in `.env`, run deploy | [DEVICES.md](docs/DEVICES.md#sungold-inverter) |
 | Skip Home Assistant | `ENABLE_HOME_ASSISTANT=0` before deploy | You still get MQTT |
 | Skip Sungold | Leave `ENABLE_SUNGOLD=0` (default) | Victron is unchanged |
+| House BLE + LAN DNS | On the **Pi 5**: same clone, `HOST_ROLE=pi5`, `sudo bash scripts/deploy.sh` | [PI5_HOUSE_EDGE.md](docs/PI5_HOUSE_EDGE.md) |
 
 You do **not** need to delete the whole project to drop a device. Flip a flag or remove one key, then re-run deploy.
 
@@ -198,6 +202,7 @@ Close the Victron phone app if sensors stay empty.
 | Doc | Who it is for |
 |-----|----------------|
 | [docs/DEVICES.md](docs/DEVICES.md) | Add / remove Victron, Sungold, HA-only devices |
+| [docs/PI5_HOUSE_EDGE.md](docs/PI5_HOUSE_EDGE.md) | House Pi 5: AdGuard DNS + BLE → Pi 4 MQTT |
 | [docs/TAILSCALE.md](docs/TAILSCALE.md) | Optional: view Home Assistant away from home |
 | [docs/SUNGOLD_SPH302480A.md](docs/SUNGOLD_SPH302480A.md) | Sungold USB, udev, smoke test |
 | [DEPLOY.md](DEPLOY.md) | Installer flags, Dockge, troubleshooting |

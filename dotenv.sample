@@ -1,8 +1,15 @@
 # Copy to .env and chmod 600:
 #   cp -n dotenv.sample .env && chmod 600 .env
 #
+# HOST_ROLE selects which Pi this checkout is:
+#   pi4 — Victron BLE, Mosquitto, Home Assistant (default)
+#   pi5 — house AdGuard DNS + Theengs BLE gateway to the Pi 4 broker
+# If unset, deploy.sh uses pi5 when the LAN IP is 192.168.0.240, otherwise pi4.
+# HOST_ROLE=pi4
+
 # MQTT broker settings for Mosquitto, Home Assistant, and victron_ble2mqtt.
 # Prefer the Pi LAN IP (hostname -I) over localhost for reliable host-network clients.
+# On HOST_ROLE=pi5 this MUST be the Pi 4 address (e.g. 192.168.0.223), not this Pi.
 
 MQTT_HOST=192.168.0.XX
 MQTT_PORT=1883

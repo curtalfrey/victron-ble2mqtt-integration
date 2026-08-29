@@ -16,7 +16,7 @@ Keep clones as **siblings** so one Cursor workspace can index them:
 
 **Cursor:** **File → Add Folder to Workspace…** and add the two other folders (or open a multi-root `.code-workspace` that lists all three). Agents and search then apply across repos without merging git histories.
 
-**Agent SSH from `.93`:** dedicated key **`id_ed25519_93_223`**, user **`n4s1@192.168.0.223`** (hostname **`pi4`**). SSH config alias **`pi4`**. Passwordless sudo for deploy (`/etc/sudoers.d/90-n4s1`). See alfa-ai **`docs/PI4_VICTRON_OPERATOR.md`** and **`deploy/cluster-members/pi4-victron/`**.
+**Agent SSH from `.93`:** dedicated key **`id_ed25519_93_223`**, user **`n4s1@192.168.0.223`** (hostname **`pi4`**). SSH config alias **`pi4`**. Passwordless sudo for deploy (`/etc/sudoers.d/90-n4s1`). House Pi 5 (`192.168.0.240`, `HOST_ROLE=pi5`): same repo, AdGuard + Theengs — [docs/PI5_HOUSE_EDGE.md](PI5_HOUSE_EDGE.md). See alfa-ai **`docs/PI4_VICTRON_OPERATOR.md`** and **`deploy/cluster-members/pi4-victron/`**.
 
 **Doc-first for alfa-ai:** When a change touches **cluster storage, hub policy, or worker deploy**, read the relevant files under `alfa-ai/docs/` (e.g. `HUB_ARTIFACTS.md`, `CLUSTER_SHARED_STORAGE.md`, `NODE_INVENTORY.md`) before editing **this** repo’s deploy scripts so paths and policy stay consistent.
 

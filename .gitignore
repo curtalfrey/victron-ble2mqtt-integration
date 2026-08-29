@@ -19,6 +19,7 @@ backups/
 _diag/
 *.bak
 *.env
+adguard-exporter.password
 *.secrets
 
 # common temporary/ignored files

@@ -1,0 +1,40 @@
+# Raspberry Pi 5 — Theengs BLE gateway → Mosquitto on the Pi 4.
+#
+# House BLE is heard here. The Pi 4 (HA + Victron) is in another building.
+# Env names match Docker Hub (MQTT_PUB_TOPIC, TIME_BETWEEN, SCAN_TIME).
+
+name: pi5-theengs
+
+services:
+  theengs-gateway:
+    image: theengs/gateway:v1.7.5.1
+    container_name: pi5-theengs-gateway
+    restart: unless-stopped
+    network_mode: host
+    privileged: true
+    env_file:
+      - mqtt.env
+    environment:
+      MQTT_PUB_TOPIC: home/TheengsGateway-pi5/BTtoMQTT
+      MQTT_SUB_TOPIC: home/+/BTtoMQTT/undecoded
+      MQTT_PRE_TOPIC: home/presence/TheengsGateway-pi5
+      LWT_TOPIC: home/TheengsGateway-pi5/LWT
+      PUBLISH_ALL: "false"
+      TIME_BETWEEN: "20"
+      SCAN_TIME: "12"
+      LOG_LEVEL: WARNING
+      DISCOVERY: "true"
+      HASS_DISCOVERY: "true"
+      PRESENCE: "false"
+      DISCOVERY_TOPIC: homeassistant
+      DISCOVERY_DEVICE_NAME: TheengsGateway-pi5
+      DISCOVERY_FILTER: "[IBEACON,GAEN,MS-CDP,APPLE_CONT,APPLE_CONTAT]"
+      SCANNING_MODE: active
+      ADAPTER: hci0
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

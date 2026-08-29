@@ -2,7 +2,7 @@
 
 This is the **only page** you need to turn gear on or off.
 
-After any change, on the Pi:
+After any change, on **that** Pi (`HOST_ROLE=pi4` or `pi5`):
 
 ```bash
 cd ~/victron-ble2mqtt-integration
@@ -21,15 +21,20 @@ Secrets stay in `.env` and `victron-secrets.env` (never commit those files).
 | **Pi4 host** (CPU, temp, Wi‑Fi) | Built into the Victron container | On with Victron | Nothing extra | Stop `victron_ble2mqtt` (you also lose Victron) |
 | **Sungold SPH302480A** | USB Modbus (read-only) | **Off** | `ENABLE_SUNGOLD=1` + USB | `ENABLE_SUNGOLD=0` or unplug USB |
 | **Home Assistant** | Browser `:8123` | On | `ENABLE_HOME_ASSISTANT=1` (default) | `ENABLE_HOME_ASSISTANT=0` |
+| **House BLE sensors** (Govee, Xiaomi, …) | BLE on **Pi 5** → MQTT on this Pi | Off until Pi 5 deploy | `HOST_ROLE=pi5` on the house Pi | `docker compose … down` on Pi 5 |
+| **Ecobee / Rheem / other Wi‑Fi HVAC** | HomeKit Device / EcoNet (LAN), not BLE | Not this repo | HA → Settings → Devices & services | Remove the integration in HA |
 | **Refoss / Govee / other HA gear** | Home Assistant integrations | Not this repo | HA → Settings → Devices & services | Remove the integration in HA |
 | **Away-from-home view** | Tailscale VPN (optional) | Off (not in deploy) | Install Tailscale on Pi + phone | Uninstall / log out of Tailscale |
 
 Victron and Sungold both publish into the **same** Mosquitto broker. They do not replace each other.
 
+The house Pi 5 (`HOST_ROLE=pi5`) publishes decoded BLE into that same broker. Wi-Fi HVAC does not use Theengs.
+
 ```
-Victron BLE  ──► victron_ble2mqtt ──┐
-Sungold USB  ──► sungold_modbus_ro ─┼──► Mosquitto :1883 ──► Home Assistant
-Pi4 metrics  ──► victron_ble2mqtt ──┘
+Victron BLE (Pi 4 radio)               ──► victron_ble2mqtt ──┐
+Sungold USB                            ──► sungold_modbus_ro ─┼──► Mosquitto :1883 ──► Home Assistant
+Pi4 metrics                            ──► victron_ble2mqtt ──┤
+House BLE (Pi 5 radio)                 ──► Theengs Gateway ───┘
 ```
 
 ---
@@ -129,6 +134,27 @@ Then `sudo bash scripts/deploy.sh`. Victron and Home Assistant keep running.
 
 ---
 
+## House BLE (Pi 5 radio → this Mosquitto)
+
+The Pi 4 cannot hear Bluetooth in the house. Clone **this same repo** on the Pi 5,
+set `HOST_ROLE=pi5` (or use LAN IP `192.168.0.240`), and run `sudo bash scripts/deploy.sh`.
+
+That starts **Theengs Gateway**, which publishes decoded sensors to **this** broker.
+Do **not** run a second Home Assistant on the Pi 5. Do **not** put Victron `ADVKEY_*`
+keys on Theengs.
+
+Full notes: [PI5_HOUSE_EDGE.md](PI5_HOUSE_EDGE.md), [hosts/pi5/README.md](../hosts/pi5/README.md).
+Topic: `home/TheengsGateway-pi5/BTtoMQTT`.
+
+## Wi‑Fi HVAC (Ecobee, Rheem)
+
+These are **not** Victron-style BLE. Add them on the existing Home Assistant:
+
+- **Ecobee** — **HomeKit Device** (local) if the thermostat is on the same LAN
+- **Rheem** — **EcoNet** (cloud account)
+
+**Settings → Devices & services → Add integration**
+
 ## Home Assistant–only devices (Refoss, Govee, …)
 
 Add these in the Home Assistant UI, not in this git repo:
@@ -137,7 +163,7 @@ Add these in the Home Assistant UI, not in this git repo:
 
 They do not need `ENABLE_*` flags here. Removing them is also done in that same HA screen.
 
-Home Assistant must be connected to MQTT for **Victron / Sungold / Pi host** sensors. The installer does that for you (HA 2026+). Do not paste broker settings into `configuration.yaml`.
+Home Assistant must be connected to MQTT for **Victron / Sungold / Pi host / house BLE (Theengs)** sensors. The installer does that for you (HA 2026+). Do not paste broker settings into `configuration.yaml`.
 
 ---
 
