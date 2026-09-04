@@ -21,9 +21,14 @@ services:
     environment:
       # Override via `.env` on host before `docker compose` or set in ha-discovery.env
       - TZ=${TZ:-America/Chicago}
+      # EcoNet on 2026.7+: scripts/ha_econet_trust_g1.sh then HA_SSL_CERT_FILE=/config/ssl/ca-bundle+g1.pem
+      - SSL_CERT_FILE=${HA_SSL_CERT_FILE:-/etc/ssl/certs/ca-certificates.crt}
     volumes:
       - /opt/homeassistant:/config
       - /run/dbus:/run/dbus:ro
+    # Official Container install: give SQLite time to close.
+    # https://www.home-assistant.io/installation/linux/
+    stop_grace_period: 60s
     # Optional serial device mapping — uncomment and set the correct host path if needed.
     # devices:
     #   - /dev/serial/by-id/usb-serial-if-needed:/dev/serial/by-id/usb-serial-if-needed

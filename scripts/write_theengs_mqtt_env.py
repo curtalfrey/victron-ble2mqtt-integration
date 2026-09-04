@@ -2,7 +2,7 @@
 """Write Theengs Gateway mqtt.env from a Victron .env file.
 
 Never prints MQTT_PASSWORD. Loopback / placeholder hosts are replaced with the
-Pi 4 broker address (Theengs on the Pi 5 cannot use 127.0.0.1).
+canonical broker address on .105 (Theengs on the Pi 5 cannot use 127.0.0.1).
 """
 from __future__ import annotations
 
@@ -68,8 +68,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "fallback_host",
         nargs="?",
-        default="192.168.0.223",
-        help="Broker IP if MQTT_HOST is localhost/placeholder (default: 192.168.0.223)",
+        default="192.168.0.105",
+        help="Broker IP if MQTT_HOST is localhost/placeholder (default: 192.168.0.105)",
     )
     args = parser.parse_args(argv)
     if not args.src.is_file():

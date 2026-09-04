@@ -233,7 +233,7 @@ class BatteryMonitorHandler(BaseHandler):
                 device_class="current",
                 state_class="measurement",
                 unit_of_measurement="A",
-                suggested_display_precision=3,
+                suggested_display_precision=1,
             ),
             "midpoint_voltage": Sensor(
                 device=self.device,
@@ -242,7 +242,7 @@ class BatteryMonitorHandler(BaseHandler):
                 device_class="voltage",
                 state_class="measurement",
                 unit_of_measurement="V",
-                suggested_display_precision=2,
+                suggested_display_precision=1,
             ),
             "remaining_mins": Sensor(
                 device=self.device,
@@ -267,7 +267,7 @@ class BatteryMonitorHandler(BaseHandler):
                 device_class="voltage",
                 state_class="measurement",
                 unit_of_measurement="V",
-                suggested_display_precision=2,
+                suggested_display_precision=1,
             ),
         }
         ####################################################################################
@@ -280,7 +280,7 @@ class BatteryMonitorHandler(BaseHandler):
             device_class="power",
             state_class="measurement",
             unit_of_measurement="W",
-            suggested_display_precision=2,
+            suggested_display_precision=1,
         )
 
         if data_dict.get("aux_mode", None) == "midpoint_voltage":
@@ -291,7 +291,7 @@ class BatteryMonitorHandler(BaseHandler):
                 device_class="voltage",
                 state_class="measurement",
                 unit_of_measurement="V",
-                suggested_display_precision=2,
+                suggested_display_precision=1,
             )
             self.midpoint_shift_percent = Sensor(
                 device=self.device,
@@ -299,7 +299,7 @@ class BatteryMonitorHandler(BaseHandler):
                 uid="midpoint_shift_percent",
                 state_class="measurement",
                 unit_of_measurement="%",
-                suggested_display_precision=2,
+                suggested_display_precision=1,
             )
 
         # Apply optional per-device precision overrides from user settings
@@ -359,7 +359,7 @@ class BatteryMonitorHandler(BaseHandler):
                     device_class="voltage",
                     state_class="measurement",
                     unit_of_measurement="V",
-                    suggested_display_precision=2,
+                    suggested_display_precision=1,
                 )
                 self.midpoint_shift_percent = Sensor(
                     device=self.device,
@@ -367,7 +367,7 @@ class BatteryMonitorHandler(BaseHandler):
                     uid="midpoint_shift_percent",
                     state_class="measurement",
                     unit_of_measurement="%",
-                    suggested_display_precision=2,
+                    suggested_display_precision=1,
                 )
                 # Apply precision overrides if configured for this device
                 try:
@@ -443,7 +443,7 @@ class SolarChargerHandler(BaseHandler):
                 device_class="voltage",
                 state_class="measurement",
                 unit_of_measurement="V",
-                suggested_display_precision=2,
+                suggested_display_precision=1,
             ),
             "charge_state": Sensor(
                 device=self.device,
@@ -466,7 +466,7 @@ class SolarChargerHandler(BaseHandler):
                 device_class="power",
                 state_class="measurement",
                 unit_of_measurement="W",
-                suggested_display_precision=0,
+                suggested_display_precision=1,
             ),
             "yield_today": Sensor(
                 device=self.device,

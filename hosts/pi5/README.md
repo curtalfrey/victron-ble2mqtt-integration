@@ -1,8 +1,8 @@
 # Raspberry Pi 5 — house edge (AdGuard + BLE gateway)
 
-This host (`192.168.0.240` in the homelab) lives **in the house**. The Pi 4
-(`192.168.0.223`) runs Home Assistant and Mosquitto in another building, so it
-cannot hear house Bluetooth.
+This host (`192.168.0.240` in the homelab) lives **in the house**. Mosquitto
+and Home Assistant run on **`.105`**. The Pi 4 (`192.168.0.223`) is the Victron
+radio in another building and cannot hear house Bluetooth.
 
 Same git repo as the Pi 4. Set **`HOST_ROLE=pi5`** in `.env` (or let deploy
 auto-detect this LAN IP) and run:
@@ -18,7 +18,7 @@ That starts:
 | **AdGuard Home** | LAN DNS (`:53`) + UI (`:8080`) so you can see which devices query which domains |
 | **adguard-exporter** | Prometheus `:9617` (needs `hosts/pi5/adguard-exporter.password`) |
 | **node_exporter** | Host metrics `:9100` |
-| **Theengs Gateway** | House **BLE** → MQTT on the Pi 4 (`home/TheengsGateway-pi5/BTtoMQTT`) |
+| **Theengs Gateway** | House **BLE** → MQTT on **`.105:1883`** (`home/TheengsGateway-pi5/BTtoMQTT`) |
 
 It does **not** run Home Assistant, Mosquitto, or Victron. It is **not** a
 router: the AXE300 stays DHCP/NAT. Wi-Fi thermostats (Ecobee, Rheem) already
@@ -32,13 +32,13 @@ cp dotenv.sample .env && chmod 600 .env
 
 ```text
 HOST_ROLE=pi5
-MQTT_HOST=192.168.0.223
+MQTT_HOST=192.168.0.105
 MQTT_PORT=1883
 MQTT_USER=victron
-MQTT_PASSWORD=<same as Pi 4 Mosquitto>
+MQTT_PASSWORD=<same as .105 Mosquitto>
 ```
 
-`MQTT_HOST` must be the **Pi 4** address. `127.0.0.1` here is this Pi, not the broker.
+`MQTT_HOST` must be the **`.105`** broker. `127.0.0.1` here is this Pi, not the broker.
 
 If AdGuard and Theengs were started earlier from the **monitoring** repo
 (`~/monitoring/hosts/pi5-dns/`), deploy copies `mqtt.env` and

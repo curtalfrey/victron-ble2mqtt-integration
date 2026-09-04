@@ -30,9 +30,16 @@ if ! timeout 4 bash -c "exec 3<>/dev/tcp/${MQTT_HOST_EFFECTIVE}/${MQTT_PORT_EFFE
   exit 1
 fi
 
-# Sanitize ADVKEY_* to 32 hex chars (strip non-hex, trim to 32)
+# ADVKEY_* must be exactly 32 hex (VictronConnect Instant Readout).
+# Do not silently truncate a longer paste -- that decrypts as garbage.
 sanitize_advkey() {
-  local v="$1"; v="${v//[^0-9A-Fa-f]/}"; echo "${v:0:32}";
+  local v="$1"
+  v="${v//[^0-9A-Fa-f]/}"
+  if [[ ${#v} -ne 32 ]]; then
+    echo "[redeploy] ERROR: advertisement key must be exactly 32 hex characters (got ${#v}). Copy Instant Readout Details from VictronConnect; do not trim a longer paste." >&2
+    exit 1
+  fi
+  echo "$v"
 }
 ADVKEY_BATTERY_1_SAN="$(sanitize_advkey "${ADVKEY_BATTERY_1:-}")"
 ADVKEY_BATTERY_2_SAN="$(sanitize_advkey "${ADVKEY_BATTERY_2:-}")"

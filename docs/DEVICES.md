@@ -44,7 +44,15 @@ House BLE (Pi 5 radio)                 ──► Theengs Gateway ───┘
 You need **two** things per device:
 
 1. **MAC address** (Bluetooth ID), e.g. `d4:ef:fb:b3:d7:0c`
-2. **Advertisement key** (32 hex characters) from the VictronConnect app
+2. **Advertisement key** (exactly **32 hex characters**) from VictronConnect
+   Instant Readout Details ([keshavdv/victron-ble](https://github.com/keshavdv/victron-ble)).
+   Do **not** truncate a longer paste. A 33-character value decrypts as garbage
+   (impossible volts/amps/watts). If HA shows Battery 1 at hundreds of volts
+   while the MPPT is ~26 V, re-copy the key from the app.
+
+Home Assistant cards for current, voltage, and power use **one decimal**
+(`suggested_display_precision: 1` on MQTT discovery — [MQTT sensor](https://www.home-assistant.io/integrations/sensor.mqtt/#suggested_display_precision)).
+Energy (Wh) and percent sensors are unchanged.
 
 ### Find the MAC
 
@@ -148,12 +156,30 @@ Topic: `home/TheengsGateway-pi5/BTtoMQTT`.
 
 ## Wi‑Fi HVAC (Ecobee, Rheem)
 
-These are **not** Victron-style BLE. Add them on the existing Home Assistant:
+These are **not** Victron-style BLE. Add them on the **existing** Home Assistant on the Pi 4 (`:8123`). Do not add a second HA on the Pi 5.
 
-- **Ecobee** — **HomeKit Device** (local) if the thermostat is on the same LAN
-- **Rheem** — **EcoNet** (cloud account)
+### Ecobee (local)
 
-**Settings → Devices & services → Add integration**
+Use **HomeKit Device**, not **HomeKit Bridge**, and not **ecobee** (that one is cloud).
+
+1. If the thermostat is in **Apple Home**, remove it there first. HomeKit allows only one controller.
+2. On the thermostat: **Menu → Settings → HomeKit → Enable pairing**. The 8-digit code appears on screen (often `XXXX-XXXX`; in HA type `XXX-XX-XXX` or the 8 digits).
+3. In HA: **Settings → Devices & services**. If it is not already discovered, **Add integration → HomeKit Device**.
+4. Enter the pairing code. You should get a `climate.*` entity plus any Eco sensors.
+
+`configuration.yaml` on this Pi must include `zeroconf:` (or `default_config:`) so mDNS discovery works. HA and the thermostat must be on the same LAN subnet.
+
+Cloud fallback (internet, more features): **Add integration → ecobee** with the ecobee.com email/password. Leave **API key** blank. **HA 2026.6+** is required for that login (MFA / Auth0). 2026.4.x crashes with “Unknown error occurred” (`IndexError` in python-ecobee-api 0.3.2). This stack pins **2026.7.3**. SMS/push MFA is unsupported; use an authenticator app.
+
+### Rheem heat-pump water heater (cloud)
+
+1. Confirm the heater is in the **EcoNet** app and you can log in there.
+2. **Settings → Devices & services → Add integration → Rheem EcoNet Products**.
+3. Use the **same** EcoNet email and password as the app (password usually needs a special character).
+
+You get a `water_heater.*` entity. EcoNet does **not** report tank temperature. It is cloud (ClearBlade), not BLE.
+
+If add/login fails with “Unknown error” / “invalid login” **after** HA is on **2026.7+**, the container no longer trusts Rheem’s old DigiCert G1 chain. Run `sudo bash scripts/ha_econet_trust_g1.sh`, set `HA_SSL_CERT_FILE=/config/ssl/ca-bundle+g1.pem` in `.env`, and recreate the `homeassistant` container. Official notes: [EcoNet SSL troubleshooting](https://www.home-assistant.io/integrations/econet/#ssl-certificate-verification-failed-home-assistant-container-installs). Do not disable TLS.
 
 ## Home Assistant–only devices (Refoss, Govee, …)
 
