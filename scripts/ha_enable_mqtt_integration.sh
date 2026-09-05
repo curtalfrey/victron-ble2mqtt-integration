@@ -20,8 +20,9 @@ if [[ -f "${ROOT_DIR}/.env" ]]; then
 fi
 
 MQTT_HOST=${MQTT_HOST:-127.0.0.1}
-# HA runs on the Pi host network; always use loopback for the broker socket.
-MQTT_BROKER=127.0.0.1
+# Same broker every client uses (HA MQTT integration broker field).
+# https://www.home-assistant.io/integrations/mqtt/#broker-configuration
+MQTT_BROKER=${MQTT_HOST}
 MQTT_PORT=${MQTT_PORT:-1883}
 MQTT_USER=${MQTT_USER:-}
 MQTT_PASSWORD=${MQTT_PASSWORD:-}

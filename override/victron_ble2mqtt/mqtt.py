@@ -161,17 +161,18 @@ def calc_midpoint_shift_percent(voltage: float, midpoint_voltage: float) -> floa
 
     >>> calc_midpoint_shift_percent(100, 50)
     0.0
-    >>> round(calc_midpoint_shift_percent(26.7, 13.2),3)
-    0.89
+    >>> round(calc_midpoint_shift_percent(26.7, 13.2), 3)
+    1.124
     >>> calc_midpoint_shift_percent(100, 51)
-    0.5
+    2.0
     >>> calc_midpoint_shift_percent(100, 49)
-    0.5
+    2.0
     """
-    try:
-        return abs(voltage / ((midpoint_voltage * 2) - voltage) / 100)
-    except ZeroDivisionError:
+    # Victron SmartShunt: d = 100 × (Vt − Vb) / V with V = Vt + Vb.
+    # https://www.victronenergy.com/media/pg/SmartShunt/en/midpoint-voltage-monitoring.html
+    if voltage == 0:
         return 0.0
+    return 100.0 * abs(voltage - 2.0 * midpoint_voltage) / voltage
 
 
 class BatteryMonitorHandler(BaseHandler):
@@ -222,7 +223,7 @@ class BatteryMonitorHandler(BaseHandler):
                 device=self.device,
                 name="Consumed Ah",
                 uid="consumed_ah",
-                state_class="total_increasing",
+                state_class="measurement",
                 unit_of_measurement="Ah",
                 suggested_display_precision=1,
             ),

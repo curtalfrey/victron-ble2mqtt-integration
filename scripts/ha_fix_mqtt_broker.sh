@@ -28,7 +28,12 @@ echo "Backing up $FILE to $BAK ..."
 docker exec "$HA_CONT" bash -lc "cp -n '$FILE' '$BAK' && ls -l '$BAK'"
 
 echo "Patching MQTT config entries ..."
-docker exec -i "$HA_CONT" bash -lc 'NEW_USER="$NEW_USER" NEW_PASS="$NEW_PASS" python3 -' <<PY
+docker exec -i "$HA_CONT" env \
+  NEW_USER="${NEW_USER}" \
+  NEW_PASS="${NEW_PASS}" \
+  NEW_HOST="${NEW_HOST}" \
+  NEW_PORT="${NEW_PORT}" \
+  python3 - <<PY
 import json, sys
 from pathlib import Path
 import os
@@ -42,15 +47,15 @@ for e in list(data.get("data",{}).get("entries", [])):
     if e.get("domain") == "mqtt":
         d = e.setdefault("data", {})
         before = (d.get("broker"), d.get("port"))
-        d["broker"] = "${NEW_HOST}"
+        d["broker"] = os.environ.get("NEW_HOST") or "127.0.0.1"
         try:
-            d["port"] = int(${NEW_PORT})
+            d["port"] = int(os.environ.get("NEW_PORT") or "1883")
         except Exception:
             d["port"] = 1883
-        # Apply username/password if provided; else clear to anonymous
-        if new_user is not None:
-            d["username"] = new_user or None
-            d["password"] = (new_pass or None)
+        if new_user:
+            d["username"] = new_user
+            if new_pass:
+                d["password"] = new_pass
         after = (d.get("broker"), d.get("port"))
         print("mqtt entry:", before, "->", after)
         changed = True

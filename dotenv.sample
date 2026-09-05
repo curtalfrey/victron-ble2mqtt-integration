@@ -8,9 +8,10 @@
 # Never run deploy.sh on 192.168.0.105 (apps VM).
 # HOST_ROLE=pi4
 
-# MQTT broker settings for Mosquitto, Home Assistant, and victron_ble2mqtt.
-# Prefer the Pi LAN IP (hostname -I) over localhost for reliable host-network clients.
+# MQTT broker settings for Mosquitto, Home Assistant, Theengs, and victron_ble2mqtt.
+# Every client MUST use this same host — including the HA MQTT integration.
 # On HOST_ROLE=pi5 this MUST be the .105 broker (192.168.0.105), not this Pi.
+# On HOST_ROLE=pi4 with Mosquitto+HA on the Pi, use this Pi's LAN IP (not a second broker).
 
 MQTT_HOST=192.168.0.105
 MQTT_PORT=1883

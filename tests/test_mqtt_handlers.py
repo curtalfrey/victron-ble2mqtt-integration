@@ -8,7 +8,8 @@ def test_calc_midpoint_shift_and_percent():
     assert round(calc_midpoint_shift(26.7, 13.2), 3) == 0.15
 
     assert calc_midpoint_shift_percent(100, 50) == 0.0
-    assert round(calc_midpoint_shift_percent(26.7, 13.2), 3) == 0.89
+    assert round(calc_midpoint_shift_percent(26.7, 13.2), 3) == 1.124
+    assert calc_midpoint_shift_percent(100, 51) == 2.0
 
 
 def test_victron_mqtt_device_handler_publish_uses_handler_map(monkeypatch):

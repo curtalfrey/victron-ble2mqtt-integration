@@ -14,7 +14,7 @@ services:
     environment:
       # MQTT_HOST: set in `.env` (recommended: Pi LAN IP). If only victron-secrets.env
       # sets MQTT_HOST=localhost, remove that line there or override in `.env`.
-      - MQTT_PORT=1883
+      - MQTT_PORT=${MQTT_PORT:-1883}
       - MQTT_USER=${MQTT_USER}
       - MQTT_PASSWORD=${MQTT_PASSWORD}
       - MAIN_UID=${MAIN_UID:-}

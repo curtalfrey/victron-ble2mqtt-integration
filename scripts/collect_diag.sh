@@ -65,7 +65,10 @@ fi
 
 echo
 echo "== Victron container MQTT env =="
-docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' victron_ble2mqtt 2>/dev/null | grep -E 'MQTT_HOST|MQTT_PORT|MQTT_USER|MQTT_PASSWORD' || echo "victron container not found"
+docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' victron_ble2mqtt 2>/dev/null \
+  | grep -E 'MQTT_HOST|MQTT_PORT|MQTT_USER|MQTT_PASSWORD' \
+  | sed -E 's/^(MQTT_PASSWORD=).*/\1****/' \
+  || echo "victron container not found"
 
 echo
 echo "== Recent logs: victron (last 120s) =="

@@ -854,6 +854,9 @@ sudo mkdir -p "$HA_CONFIG_DIR"
 sudo chown -R "${SUDO_USER:-$USER}":"${SUDO_USER:-$USER}" "$HA_CONFIG_DIR" || true
 if [[ ! -f "$HA_CONFIG_DIR/configuration.yaml" ]]; then
   cat > "$HA_CONFIG_DIR/configuration.yaml" <<YAML
+# Official default install includes default_config (frontend, bluetooth, zeroconf, energy, backup).
+# https://www.home-assistant.io/integrations/default_config/
+default_config:
 homeassistant:
   time_zone: ${HA_TZ}
 YAML

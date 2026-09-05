@@ -240,6 +240,7 @@ fi
 sudo chown -R "$USER":"$USER" "$HA_CONFIG_DIR" || true
 if [[ ! -f "$HA_CONFIG_DIR/configuration.yaml" ]]; then
   cat > "$HA_CONFIG_DIR/configuration.yaml" <<'YAML'
+default_config:
 homeassistant:
   time_zone: America/Chicago
 YAML
@@ -252,7 +253,13 @@ if docker ps -a --format '{{.Names}}' | grep -qw homeassistant; then
   docker start homeassistant >/dev/null || true
 else
   docker run -d --name homeassistant --restart unless-stopped \
-    --network host -e TZ="$HA_TZ" -v "$HA_CONFIG_DIR":/config \
+    --network host --cap-add NET_ADMIN --cap-add NET_RAW \
+    --health-cmd 'curl -fsS http://localhost:8123/ || exit 1' \
+    --health-interval 30s --health-timeout 5s --health-retries 3 \
+    --health-start-period 300s \
+    -e TZ="$HA_TZ" \
+    -v "$HA_CONFIG_DIR":/config \
+    -v /run/dbus:/run/dbus:ro \
     "${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.7.3}" >/dev/null
 fi
 

@@ -35,6 +35,10 @@ fi
 sanitize_advkey() {
   local v="$1"
   v="${v//[^0-9A-Fa-f]/}"
+  if [[ -z "$v" ]]; then
+    echo ""
+    return 0
+  fi
   if [[ ${#v} -ne 32 ]]; then
     echo "[redeploy] ERROR: advertisement key must be exactly 32 hex characters (got ${#v}). Copy Instant Readout Details from VictronConnect; do not trim a longer paste." >&2
     exit 1

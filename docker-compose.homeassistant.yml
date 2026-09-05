@@ -44,6 +44,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 300s
 
 # Notes:
 # - Maps live config at /opt/homeassistant
